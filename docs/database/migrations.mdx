@@ -1,0 +1,23 @@
+---
+title: Migrations
+description: Schema migrations and versioning.
+---
+
+# Migrations
+
+Database migrations are stored in `database/migrations/` in the repo. See the repo file `database/migrations/MIGRATIONS.md` for the migration workflow and naming conventions.
+
+## Applying migrations
+
+From the repo root, with PostgreSQL running and `PGHOST`, `PGPORT`, `PGUSER`, `PGDATABASE` set (e.g. `PGDATABASE=testdb`):
+
+```bash
+./database/run_migrations.sh
+./database/verify_schema.sh
+```
+
+`run_migrations.sh` applies every `database/migrations/*.sql` file in lexicographic order. `verify_schema.sh` checks that expected tables and materialized views exist. Migrations are also run in CI before tests.
+
+## Versioning
+
+Schema changes are additive where possible; breaking changes require a clear upgrade path and, when applicable, backfills. This page will be updated with concrete steps as the project matures.

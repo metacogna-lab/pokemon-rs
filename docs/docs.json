@@ -1,0 +1,46 @@
+{
+  "name": "Pokemon-RS",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
+  },
+  "favicon": "/favicon.png",
+  "anchors": [
+    { "name": "GitHub", "url": "https://github.com" },
+    { "name": "API", "url": "/api-reference" }
+  ],
+  "navigation": [
+    { "group": "Introduction", "pages": ["intro", "getting-started"] },
+    {
+      "group": "Architecture",
+      "pages": [
+        "architecture/overview",
+        "architecture/state-machine",
+        "architecture/data-model"
+      ]
+    },
+    {
+      "group": "Backend",
+      "pages": ["backend/overview", "backend/cli", "backend/api-contract"]
+    },
+    {
+      "group": "Agents",
+      "pages": [
+        "agents/overview",
+        "agents/strategic-planner",
+        "agents/orchestrator",
+        "agents/behaviour-profiles"
+      ]
+    },
+    {
+      "group": "Database",
+      "pages": ["database/schema", "database/migrations"]
+    },
+    {
+      "group": "Reference",
+      "pages": ["reference/openapi", "reference/errors"]
+    }
+  ],
+  "footerSocials": [],
+  "theme": "mintlify"
+}

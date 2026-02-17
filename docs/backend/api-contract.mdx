@@ -1,0 +1,35 @@
+---
+title: API Contract
+description: OpenAPI and type flow from Rust to TypeScript.
+---
+
+# API Contract
+
+The API is defined by **OpenAPI 3.0** in `openapi.yaml`. It is the single source of truth for HTTP request/response shapes.
+
+## Type flow
+
+1. **Rust** — Domain types in `controller/` are serialised via Serde.
+2. **OpenAPI** — `openapi.yaml` describes endpoints and schemas (hand-maintained or generated).
+3. **TypeScript** — `agents/ts-client` is generated with `openapi-generator-cli`; agents must not hand-write API models.
+
+## Tags
+
+- **Session** — Lifecycle and state.
+- **Gameplay** — Spin, bet, and related actions.
+- **Wallet** — Balances and limits.
+- **Health** — Service health.
+
+## Error shape
+
+All errors use:
+
+```json
+{ "error": { "code": "string", "message": "string", "details": null } }
+```
+
+Standard codes: `INVALID_INPUT`, `NOT_FOUND`, `STATE_ERROR`, `WALLET_LIMIT_EXCEEDED`, `RATE_LIMIT`, `INTERNAL_ERROR`, `UNAUTHORIZED`. See [Errors](/reference/errors).
+
+## Reference
+
+See [OpenAPI reference](/reference/openapi) for the full spec. Regenerate the TS client after any API change.

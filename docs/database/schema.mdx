@@ -1,0 +1,22 @@
+---
+title: Database Schema
+description: Entities, tables, and relationships.
+---
+
+# Database Schema
+
+The schema is defined in the repo under `database/schema/` and documented in [DATASTORE](/.agents/DATASTORE.md).
+
+## Core entities
+
+- **Games** — `game_id`, name, RNG signature, symbol map, statistical profile.
+- **Sessions** — Session state, timestamps, and linkage to games and wallets.
+- **Wallets** — Balances, limits, and currency.
+- **Gameplay events** — Spin actions and results for analytics and RL.
+- **RL store** — Experience records (state, action, reward, next_state, done) for Phase 4.
+
+## Indexing and performance
+
+Indexing and temporal/event-store rules are described in DATASTORE. Migrations live in `database/migrations/`; see [Migrations](/database/migrations).
+
+This page will be expanded with ER diagrams and per-table notes as the schema is finalised.

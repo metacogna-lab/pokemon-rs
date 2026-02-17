@@ -1,0 +1,23 @@
+---
+title: CLI
+description: Command-line interface and subcommands.
+---
+
+# CLI
+
+The Rust CLI (`cli` crate) is the main entrypoint for running the backend and API.
+
+## Run
+
+```bash
+cargo run -p cli
+cargo run -p cli -- serve   # Start API server (when wired)
+```
+
+## Subcommands
+
+Subcommands will be documented here as they are implemented (e.g. `serve`, session create, health). See PRD_CLI in the repo for the full CLI product requirements.
+
+## Configuration
+
+Configuration (e.g. DB URL, port) will be documented when the server and persistence layer are wired. For now, refer to `openapi.yaml` for the API contract and the API contract doc for request/response shapes.

@@ -1,0 +1,34 @@
+---
+title: Error Codes
+description: Standard API error codes and handling.
+---
+
+# Error Codes
+
+All API errors use this shape:
+
+```json
+{
+  "error": {
+    "code": "string",
+    "message": "string",
+    "details": null
+  }
+}
+```
+
+## Standard codes
+
+| Code                   | Meaning                              |
+| ---------------------- | ------------------------------------ |
+| `INVALID_INPUT`        | Bad or invalid request parameters    |
+| `NOT_FOUND`            | Resource not found                   |
+| `STATE_ERROR`          | Invalid state transition or state    |
+| `WALLET_LIMIT_EXCEEDED`| Balance or limit violated; do not retry blindly |
+| `RATE_LIMIT`           | Too many requests; back off          |
+| `INTERNAL_ERROR`       | Server error                         |
+| `UNAUTHORIZED`         | Auth required or invalid             |
+
+## Agent behaviour
+
+Agents must treat `WALLET_LIMIT_EXCEEDED` and `RATE_LIMIT` as terminal or back-off conditions, not as transient errors to retry indefinitely.

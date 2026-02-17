@@ -1,0 +1,179 @@
+name: CI/CD — Agentic Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  ### 📚 Docs structure
+  docs:
+    name: Validate Docs Structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Validate Mintlify docs
+        run: bun run docs:validate
+
+  ### 🧹 Lint (Rust + TS)
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Rust lint
+      - name: Setup Rust toolchain
+        uses: actions/setup-rust@v1
+        with:
+          rust-version: stable
+
+      - name: Rust fmt + clippy
+        run: |
+          cargo fmt -- --check
+          cargo clippy --all-targets -- -D warnings
+
+      # TS lint
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install TS deps
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Save Lint Report
+        run: |
+          mkdir -p .agents/ci/reports/lint
+          cp lint-report.txt .agents/ci/reports/lint/ || true
+
+  ### 🧪 Test Suite (Rust & TS)
+  test:
+    name: Test All
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d testdb"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Run DB migrations
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGDATABASE: testdb
+        run: |
+          chmod +x database/run_migrations.sh database/verify_schema.sh
+          database/run_migrations.sh
+          database/verify_schema.sh
+
+      # Rust Tests
+      - name: Setup Rust
+        uses: actions/setup-rust@v1
+        with:
+          rust-version: stable
+
+      - name: Run Rust Tests
+        run: |
+          cargo test --all -- --nocapture
+      - name: Store Rust Test Results
+        run: |
+          mkdir -p .agents/ci/results/rust-tests
+          cp -r target/debug/deps .agents/ci/results/rust-tests/
+
+      # TS Tests
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install TS
+        run: npm ci
+
+      - name: Run TS Tests
+        run: npm test
+
+      - name: Store TS Test Results
+        run: |
+          mkdir -p .agents/ci/results/ts-tests
+          cp -r coverage .agents/ci/results/ts-tests/ || true
+
+  ### 📦 Build + Bundle
+  build:
+    name: Build Backend & Agents
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions/setup-rust@v1
+        with:
+          rust-version: stable
+
+      - name: Rust Build Release
+        run: cargo build --release
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build TS Agents
+        run: npm run build
+
+      - name: Record Build Artifacts
+        run: |
+          mkdir -p .agents/ci/build
+          cp -r target/release .agents/ci/build/backend
+          cp -r dist .agents/ci/build/agents || true
+
+  ### 📊 Publish CI Metadata
+  publish:
+    name: Publish CI Metadata
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload All Agent CI Data
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentic-ci-output
+          path: .agents/ci/
+
+      - name: Log Report Summary
+        run: |
+          echo ">>> 🚀 Agentic CI Data Published"
+          ls -R .agents/ci/

@@ -1,0 +1,30 @@
+---
+title: State Machine
+description: Session lifecycle and valid transitions.
+---
+
+# State Machine
+
+Session state is managed by a pure state machine in `controller/src/state_engine/`.
+
+## States
+
+| State         | Description                          |
+| ------------- | ------------------------------------ |
+| Idle          | No active session                    |
+| Initialized   | Session created, ready to probe/play  |
+| Probing       | Probing game engine                  |
+| Playing       | Active gameplay                      |
+| Evaluating    | Evaluating result / updating metrics |
+| Completed     | Session finished                     |
+
+## Transitions
+
+Transitions are pure functions returning `Result<GameState>`. Invalid moves return `StateError::InvalidTransition`; the backend never panics on invalid state.
+
+Every transition is:
+
+- Persisted via the persistence layer.
+- Emitted as a structured log event for observability.
+
+Details will be expanded as the backend implementation stabilises.

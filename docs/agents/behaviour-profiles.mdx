@@ -1,0 +1,24 @@
+---
+title: Behaviour Profiles
+description: Conservative, aggressive, and mixed-adaptive play styles.
+---
+
+# Behaviour Profiles
+
+Behaviour profiles encapsulate how agents choose stakes and timing to simulate human-like play.
+
+## Profiles
+
+| Profile          | Description                         |
+| ---------------- | ----------------------------------- |
+| Conservative     | Low bet, slow spin rate             |
+| Aggressive       | Higher bet, varied timing           |
+| Mixed adaptive   | Varies based on reward signals      |
+
+Profiles are fully typed and unit-tested. They feed into the strategic planner and orchestrator so the same pipeline can run different “personas.”
+
+## Reward target
+
+In the RL phase, the reward signal targets **human-likeness** (timing, stake variation) as well as payout, so profiles are central to training.
+
+This section will expand with parameter definitions and examples as profiles are implemented.

@@ -1,0 +1,23 @@
+---
+title: Data Model
+description: Core entities and relationships.
+---
+
+# Data Model
+
+The system uses modular storage domains aligned with [DATASTORE](/database/schema).
+
+## Core domains
+
+- **Games** — Definitions, RNG signatures, symbol maps, statistical profiles.
+- **Sessions** — Session state, history, and lifecycle.
+- **Wallets** — Balances, limits, and financial constraints.
+- **Gameplay events** — Spin actions and results.
+- **RL store** — Experience tuples and reward signals (Phase 4).
+- **Analytics** — Metrics and reporting.
+
+## Contracts
+
+Rust domain types are the source of truth. OpenAPI and the generated TypeScript client reflect these types. See [API contract](/backend/api-contract) and [CONTRACTS](/.agents/CONTRACTS.md) in the repo for full detail.
+
+This page will be expanded with entity diagrams and field-level documentation as the schema matures.

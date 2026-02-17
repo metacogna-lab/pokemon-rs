@@ -1,0 +1,10 @@
+{
+  "name": "pokemon-rs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Autonomous slot gameplay and fingerprinting: Rust backend, TypeScript agents, Mintlify docs",
+  "scripts": {
+    "docs:validate": "bun run scripts/validate-docs-structure.ts",
+    "docs:dev": "cd docs && npx mint dev"
+  }
+}

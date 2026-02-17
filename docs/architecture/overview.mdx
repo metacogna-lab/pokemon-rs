@@ -1,0 +1,28 @@
+---
+title: Architecture Overview
+description: High-level system design and data flow.
+---
+
+# Architecture Overview
+
+The system is split into:
+
+- **Rust backend** — Session and state management, fingerprint engine, wallet/limits, persistence.
+- **TypeScript agents** — Strategic planner, game interaction orchestrator, behaviour profiles.
+- **API contract** — OpenAPI 3.0; Rust types are the source of truth, TypeScript client is generated.
+
+## Type flow
+
+```
+Rust (controller) → OpenAPI (openapi.yaml) → TypeScript (agents/ts-client)
+```
+
+Agents never hand-write API models; they use the generated client only.
+
+## State machine
+
+Sessions move through: **Idle → Initialized → Probing → Playing → Evaluating → Completed**. All transitions are pure functions in `controller/src/state_engine/` and are persisted and logged.
+
+## Data domains
+
+Core storage domains: Games, Sessions, Wallets, Gameplay Events, RL Store, Analytics. See [Data model](/architecture/data-model) and [Database schema](/database/schema).

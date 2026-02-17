@@ -1,0 +1,27 @@
+---
+title: OpenAPI Reference
+description: Full API specification.
+---
+
+# OpenAPI Reference
+
+The canonical API spec is **openapi.yaml** in the repo root (version 1.0.0).
+
+## Servers
+
+- Production: `https://api.slotgame.example.com/v1`
+- Local: `http://localhost:8080/v1`
+
+## Regenerating the TypeScript client
+
+After any change to `openapi.yaml`:
+
+```bash
+openapi-generator-cli generate \
+  -i openapi.yaml \
+  -g typescript-fetch \
+  -o ./agents/ts-client \
+  --additional-properties=supportsES6=true
+```
+
+You can also point Mintlify at `openapi.yaml` for auto-generated API reference pages if desired. This doc will be expanded with endpoint summaries and links to the spec file.

@@ -1,0 +1,27 @@
+---
+title: Backend Overview
+description: Rust CLI and controller responsibilities.
+---
+
+# Backend Overview
+
+The backend is a Rust workspace: **cli** (binary) and **controller** (library).
+
+## Controller modules
+
+| Module                   | Role                                      |
+| ------------------------ | ----------------------------------------- |
+| `game_session_manager`   | Session CRUD and lifecycle                 |
+| `state_engine`           | Pure state machine (Idle → Completed)     |
+| `simulator_human_proxy`  | Human-like timing and bet variation       |
+| `fingerprinter`           | RNG signature and statistical profiling   |
+| `rl_feedback_loop`       | Reward capture and experience buffer      |
+| `persistence_metrics`   | DB access and metrics emission            |
+
+## CLI
+
+The CLI binary (`cargo run -p cli`) exposes backend functionality. Use `cargo run -p cli -- serve` for the API server (port 8080 per OpenAPI). See [CLI](/backend/cli) for commands and options.
+
+## Financial guardrails
+
+All gameplay actions enforce wallet checks: balance ≥ bet, daily limits, per-spin/query fees. Violations return `WALLET_LIMIT_EXCEEDED`; agents must handle this without unbounded retries.

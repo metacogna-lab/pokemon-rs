@@ -1,0 +1,24 @@
+---
+title: Game Interaction Orchestrator
+description: Session lifecycle, retries, and scheduling.
+---
+
+# Game Interaction Orchestrator
+
+The orchestrator manages end-to-end agent workflow: session start, spins, result retrieval, and coordination with the backend.
+
+## Responsibilities
+
+- **Session lifecycle** — Create session, transition states, and complete or abort.
+- **Scheduling** — When to act (e.g. inter-spin delays with human-like jitter).
+- **Retries and circuit breaker** — Handle transient failures and wallet/rate-limit errors without unbounded retries.
+
+## Integration
+
+It uses the generated API client and the strategic planner for action proposals. Behaviour profiles are injected so the same orchestrator can run conservative, aggressive, or mixed-adaptive strategies.
+
+## Error handling
+
+`WALLET_LIMIT_EXCEEDED` and `RATE_LIMIT` must be handled explicitly; the orchestrator should back off or stop rather than retry indefinitely.
+
+Details and code references will be added as the module is implemented.

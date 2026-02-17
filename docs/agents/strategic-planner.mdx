@@ -1,0 +1,23 @@
+---
+title: Strategic Planner
+description: Observation to ActionProposal logic.
+---
+
+# Strategic Planner
+
+The strategic planner turns **observations** (session state, metrics, results) into **action proposals** (e.g. PlaceBet, Spin, CashOut).
+
+## Observation layer
+
+Observations wrap raw API responses in a typed abstraction so the planner works with domain terms that match the backend (e.g. `SessionModel`, `GameplayResultModel`, `SessionMetricsModel` from the generated client).
+
+## Action proposals
+
+Proposals are an exhaustive union (e.g. `PlaceBet | Spin | CashOut`) with no `any`. All branches are handled explicitly so the orchestrator never receives an unsupported action type.
+
+## Inputs
+
+- Session and result data from the API.
+- Behaviour profile (conservative, aggressive, mixed_adaptive) to drive stake and timing.
+
+This page will expand with concrete types and examples as the planner implementation stabilises.

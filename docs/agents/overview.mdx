@@ -1,0 +1,26 @@
+---
+title: Agents Overview
+description: TypeScript agent architecture and stages.
+---
+
+# Agents Overview
+
+TypeScript agents run in a Bun workspace under `agents/`. They are stateless against the database; all reads and writes go through the backend API.
+
+## Progressive stages
+
+| Stage | Deliverable                         | Location                    |
+| ----- | ----------------------------------- | --------------------------- |
+| 1     | Generated TS client from OpenAPI     | `agents/ts-client/`         |
+| 2     | Observation layer over API responses | `strategic_planner/observation` |
+| 3     | ActionProposal planner (exhaustive)   | `strategic_planner/planner`  |
+| 4     | Behaviour profiles                   | `strategic_planner/profiles/` |
+| 5     | Orchestrator (lifecycle, retries)    | `game_interaction_orchestrator/` |
+
+## Key components
+
+- **Strategic planner** — Maps observations to action proposals; supports conservative, aggressive, and mixed-adaptive profiles.
+- **Game interaction orchestrator** — Session lifecycle, retries, and scheduling.
+- **RL model runner** — Stub until Phase 4; will run policy inference.
+
+All agent logic is typed; no `any`. See [Strategic planner](/agents/strategic-planner), [Orchestrator](/agents/orchestrator), and [Behaviour profiles](/agents/behaviour-profiles).

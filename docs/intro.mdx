@@ -1,0 +1,28 @@
+---
+title: Introduction
+description: Overview of the autonomous slot gameplay and fingerprinting system.
+---
+
+# Introduction
+
+**Pokemon-RS** is an autonomous slot machine gameplay and fingerprinting system. It simulates human-like play, extracts statistical game profiles, and—once the core is stable—feeds experience data into a Gymnasium-compatible reinforcement learning loop.
+
+## Goals
+
+- **Autonomous gameplay** — CLI and backend drive session lifecycle and state.
+- **Human-like behaviour** — Variable timing, stake variation, and session breaks via agent profiles.
+- **Fingerprinting** — RNG signature and statistical profiling of game engines.
+- **RL-ready** — Experience buffer and reward signals for future policy training.
+
+## Stack
+
+| Layer        | Technology                          |
+| ------------ | ------------------------------------ |
+| Backend      | Rust (CLI + controller library)      |
+| Agents       | TypeScript (Bun), OpenAPI-generated client |
+| Contract     | OpenAPI 3.0 (`openapi.yaml`)        |
+| Data         | PostgreSQL-compatible schema, migrations |
+
+## Phases
+
+Development is phased: **backend → agents → RL**. Documentation in this site will expand as each phase progresses.
