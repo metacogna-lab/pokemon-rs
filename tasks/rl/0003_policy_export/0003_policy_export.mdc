@@ -1,0 +1,17 @@
+---
+alwaysApply: false
+---
+task_id: "0003_policy_export"
+title: Policy Export
+description: >
+  Export experience data for offline Gymnasium training; GET /v1/rl/export.
+
+entry_criteria:
+  - 0001_rl_store, 0002_reward_signals complete
+exit_criteria:
+  - OpenAPI export path and Experience schema
+  - Export function in controller
+  - TS client regenerated
+deliverables:
+  - openapi.yaml (Experience, export path)
+  - controller/src/rl_feedback_loop/export.rs

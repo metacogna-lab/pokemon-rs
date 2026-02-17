@@ -1,7 +1,6 @@
 //! Experience store trait and in-memory implementation.
 
 use super::Experience;
-use std::collections::HashMap;
 use std::sync::RwLock;
 use uuid::Uuid;
 

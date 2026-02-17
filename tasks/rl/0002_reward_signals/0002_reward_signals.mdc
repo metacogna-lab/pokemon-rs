@@ -1,0 +1,16 @@
+---
+alwaysApply: false
+---
+task_id: "0002_reward_signals"
+title: Reward Signals
+description: >
+  Reward formula (payout - stake) - operational_cost + human_likeness_score;
+  persist signals per action.
+
+entry_criteria:
+  - 0001_rl_store complete
+exit_criteria:
+  - compute_reward function implemented and tested
+  - Reward persisted in Experience
+deliverables:
+  - controller/src/rl_feedback_loop/reward.rs

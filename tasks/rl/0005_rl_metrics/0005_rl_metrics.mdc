@@ -1,0 +1,17 @@
+---
+alwaysApply: false
+---
+task_id: "0005_rl_metrics"
+title: RL Metrics
+description: >
+  Success metrics; reward calibration validation; ARCHITECTURE/DATASTORE updates.
+
+entry_criteria:
+  - 0004_train_integration complete
+exit_criteria:
+  - Metric functions implemented and tested
+  - Reward calibration validated
+  - Docs updated
+deliverables:
+  - controller/src/rl_feedback_loop/metrics.rs or agents/rl_model_runner/metrics.ts
+  - .agents/ARCHITECTURE.md, .agents/DATASTORE.md updates

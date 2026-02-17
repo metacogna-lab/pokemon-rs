@@ -55,4 +55,12 @@ mod tests {
         let r = compute_reward_safe(5.0, 5.0, 0.0, 1.5);
         assert!((r - 1.0).abs() < 1e-9);
     }
+
+    #[test]
+    fn calibration_human_likeness_dominates_when_payout_neutral() {
+        let r_low = compute_reward(5.0, 5.0, 0.1, 0.0);
+        let r_high = compute_reward(5.0, 5.0, 0.1, 1.0);
+        assert!(r_high > r_low);
+        assert!((r_high - r_low - 1.0).abs() < 1e-9);
+    }
 }

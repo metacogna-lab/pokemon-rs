@@ -1,0 +1,22 @@
+---
+alwaysApply: false
+---
+task_id: "rl"
+title: Reinforcement Learning Task Group Root
+description: >
+  Root metadata governing RL component work including experience store,
+  reward logic, policy export, and evaluation.
+
+entry_criteria:
+  - tasks/rl/ directory exists
+exit_criteria:
+  - All RL sub-folder .mdc files exist and validate
+deliverables:
+  - 0001_rl_store.mdc
+  - 0002_reward_signals.mdc
+  - 0003_policy_export.mdc
+  - 0004_train_integration.mdc
+  - 0005_rl_metrics.mdc
+agent_instructions:
+  - Validate reward calibration tests
+  - Ensure RL data is exportable for offline training

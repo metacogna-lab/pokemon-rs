@@ -1,0 +1,16 @@
+---
+alwaysApply: false
+---
+task_id: "0004_train_integration"
+title: Training Integration
+description: >
+  rl_model_runner policy inference; training pipeline hook; export to train flow.
+
+entry_criteria:
+  - 0003_policy_export complete
+exit_criteria:
+  - infer(Observation) returns ActionProposal
+  - Training script documented
+deliverables:
+  - agents/rl_model_runner/infer.ts
+  - scripts/rl_export_train.py or equivalent

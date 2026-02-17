@@ -1,0 +1,19 @@
+---
+alwaysApply: false
+---
+task_id: "0001_rl_store"
+title: RL Experience Store
+description: >
+  Experience replay buffer schema; Experience struct; ExperienceStore trait;
+  in-memory mock for tests.
+
+entry_criteria:
+  - tasks/rl/ directory exists
+  - DB migration 0005 (rl_store) applied
+exit_criteria:
+  - Experience struct matches DATASTORE 2.5
+  - ExperienceStore trait with in-memory impl
+  - Unit tests pass
+deliverables:
+  - controller/src/rl_feedback_loop/experience.rs
+  - controller/src/rl_feedback_loop/store.rs
