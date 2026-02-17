@@ -9,8 +9,8 @@ use axum::{
     Json, Router,
 };
 use controller::api::{
-    CreateSessionRequest, CreateSessionResponse, ErrorResponse, HealthResponse, Session,
-    SessionId, WalletOperationRequest, WalletOperationResponse,
+    CreateSessionRequest, CreateSessionResponse, ErrorResponse, HealthResponse, Session, SessionId,
+    WalletOperationRequest, WalletOperationResponse,
 };
 use controller::app_state::{AppState as ControllerAppState, DomainError};
 use controller::game_session_manager::GameSessionManager;
@@ -23,13 +23,14 @@ use uuid::Uuid;
 
 /// Builds the v1 API router with health, sessions, and middleware.
 pub fn app(state: ControllerAppState) -> Router {
+    let state_clone = state.clone();
     Router::new()
         .route("/health", get(health_handler))
         .route("/sessions", post(create_session_handler))
         .route("/sessions/:session_id", get(get_session_handler))
         .route("/wallets/:wallet_id/operations", post(wallet_operations_handler))
         .layer(TraceLayer::new_for_http())
-        .route_layer(middleware::from_fn(auth_middleware))
+        .route_layer(middleware::from_fn_with_state(state_clone, auth_middleware))
         .with_state(state)
 }
 
@@ -109,17 +110,26 @@ async fn wallet_operations_handler(
 }
 
 /// Auth middleware: requires Authorization: Bearer <token>; returns 401 with ErrorResponse otherwise.
-async fn auth_middleware(request: Request, next: Next) -> Response {
+/// When api_keys is non-empty, token must be in the set; when empty (dev mode), any non-empty Bearer is accepted.
+async fn auth_middleware(
+    State(state): State<ControllerAppState>,
+    request: Request,
+    next: Next,
+) -> Response {
     let auth = request
         .headers()
         .get("Authorization")
         .and_then(|v| v.to_str().ok());
-    let valid = match auth {
-        Some(h) if h.starts_with("Bearer ") && h.len() > 7 => {
-            let token = h["Bearer ".len()..].trim();
-            !token.is_empty()
-        }
-        _ => false,
+    let token = match auth {
+        Some(h) if h.starts_with("Bearer ") && h.len() > 7 => h["Bearer ".len()..].trim(),
+        _ => "",
+    };
+    let valid = if token.is_empty() {
+        false
+    } else if state.api_keys.is_empty() {
+        true
+    } else {
+        state.api_keys.contains(token)
     };
     if !valid {
         return (
@@ -132,6 +142,7 @@ async fn auth_middleware(request: Request, next: Next) -> Response {
 }
 
 /// Builds the full v1 app with default in-memory state (for tests).
+#[allow(dead_code)]
 pub fn v1_app() -> Router {
     let state = ControllerAppState::new(
         Arc::new(InMemorySessionStore::new()),
@@ -217,5 +228,111 @@ mod tests {
         let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
         assert!(json.get("sessionId").is_some());
         assert_eq!(json.get("state").and_then(|v| v.as_str()), Some("Initialized"));
+    }
+
+    /// Integration: create session then get by id — verifies session manager + persistence round-trip.
+    #[tokio::test]
+    async fn create_then_get_session_roundtrip() {
+        let app = v1_app();
+        let create_body = serde_json::json!({
+            "gameId": "00000000-0000-4000-8000-000000000002",
+            "playerProfile": { "behaviorType": "aggressive" }
+        });
+        let create_req = Request::post("http://localhost/v1/sessions")
+            .header("Authorization", "Bearer test-token")
+            .header("Content-Type", "application/json")
+            .body(Body::from(create_body.to_string()))
+            .unwrap();
+        let create_res = app.clone().oneshot(create_req).await.unwrap();
+        assert_eq!(create_res.status(), StatusCode::CREATED);
+        let body = create_res.into_body().collect().await.unwrap().to_bytes();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        let session_id = json.get("sessionId").and_then(|v| v.as_str()).unwrap();
+
+        let get_req = Request::get(format!("http://localhost/v1/sessions/{}", session_id))
+            .header("Authorization", "Bearer test-token")
+            .body(Body::empty())
+            .unwrap();
+        let get_res = app.oneshot(get_req).await.unwrap();
+        assert_eq!(get_res.status(), StatusCode::OK);
+        let body = get_res.into_body().collect().await.unwrap().to_bytes();
+        let session: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(session.get("sessionId").and_then(|v| v.as_str()), Some(session_id));
+        assert_eq!(session.get("state").and_then(|v| v.as_str()), Some("Initialized"));
+    }
+
+    #[tokio::test]
+    async fn get_session_returns_404_for_unknown_id() {
+        let req = Request::get("http://localhost/v1/sessions/00000000-0000-4000-8000-000000000099")
+            .header("Authorization", "Bearer test-token")
+            .body(Body::empty())
+            .unwrap();
+        let app = v1_app();
+        let res = app.oneshot(req).await.unwrap();
+        assert_eq!(res.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn wallet_operations_returns_402_on_limit_exceeded() {
+        use controller::persistence_metrics::{test_wallet, InMemorySessionStore, InMemoryWalletStore};
+
+        let wallet_id = uuid::Uuid::new_v4();
+        let wallet_store = Arc::new(InMemoryWalletStore::new());
+        wallet_store.seed(test_wallet(wallet_id, 5.0));
+        let state = ControllerAppState::new(
+            Arc::new(InMemorySessionStore::new()),
+            wallet_store,
+            None,
+        );
+        let app = Router::new().nest("/v1", super::app(state));
+
+        let body = serde_json::json!({
+            "operation": "debit",
+            "amount": { "amount": 10.0, "currency": "AUD" }
+        });
+        let req = Request::post(format!("http://localhost/v1/wallets/{}/operations", wallet_id))
+            .header("Authorization", "Bearer test-token")
+            .header("Content-Type", "application/json")
+            .body(Body::from(body.to_string()))
+            .unwrap();
+        let res = app.oneshot(req).await.unwrap();
+        assert_eq!(res.status(), StatusCode::PAYMENT_REQUIRED);
+        let resp_body = res.into_body().collect().await.unwrap().to_bytes();
+        let json: serde_json::Value = serde_json::from_slice(&resp_body).unwrap();
+        assert_eq!(
+            json.get("error").and_then(|e| e.get("code")).and_then(|c| c.as_str()),
+            Some("WALLET_LIMIT_EXCEEDED")
+        );
+    }
+
+    #[tokio::test]
+    async fn wallet_operations_returns_200_on_successful_debit() {
+        use controller::persistence_metrics::{test_wallet, InMemorySessionStore, InMemoryWalletStore};
+
+        let wallet_id = uuid::Uuid::new_v4();
+        let wallet_store = Arc::new(InMemoryWalletStore::new());
+        wallet_store.seed(test_wallet(wallet_id, 100.0));
+        let state = ControllerAppState::new(
+            Arc::new(InMemorySessionStore::new()),
+            wallet_store,
+            None,
+        );
+        let app = Router::new().nest("/v1", super::app(state));
+
+        let body = serde_json::json!({
+            "operation": "debit",
+            "amount": { "amount": 10.0, "currency": "AUD" }
+        });
+        let req = Request::post(format!("http://localhost/v1/wallets/{}/operations", wallet_id))
+            .header("Authorization", "Bearer test-token")
+            .header("Content-Type", "application/json")
+            .body(Body::from(body.to_string()))
+            .unwrap();
+        let res = app.oneshot(req).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let resp_body = res.into_body().collect().await.unwrap().to_bytes();
+        let json: serde_json::Value = serde_json::from_slice(&resp_body).unwrap();
+        let balance = json.get("wallet").and_then(|w| w.get("balance")).and_then(|b| b.get("amount")).and_then(|a| a.as_f64()).unwrap();
+        assert!((balance - 90.0).abs() < 0.001);
     }
 }
