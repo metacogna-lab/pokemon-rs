@@ -10,4 +10,4 @@
 
 ## Edge Cases
 
-- Get non-existent session → 404. Invalid transition → DomainError::InvalidTransition (maps to 409 STATE_ERROR in API when wired).
+- Get non-existent session → 404. Invalid transition → DomainError::InvalidTransition (maps to 409 STATE_ERROR when POST /sessions/{id}/action is added in Phase 2).

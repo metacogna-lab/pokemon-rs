@@ -323,10 +323,20 @@ Tracing via OpenTelemetry
 
 Alerts on unusual state transitions
 
-12. MVP Roadmap
+12. Phase 2 Backend Modules (controller crate)
+
+Event store (event_store): Persists gameplay events (action + result) per session; EventStore trait with insert and list_by_session; InMemoryEventStore for tests. GET /sessions/{id}/events returns events ordered by timestamp.
+
+Fingerprinter (fingerprinter): Extraction of symbol frequencies, RNG signature digest, and statistical profile (RTP, volatility); FingerprintStore for persistence; GET /games/{gameId}/fingerprint returns fingerprint.
+
+Security (auth, ratelimit): Bearer token parsing and validation; Role (User, Admin); rate limiter per key (fixed window). Log unauthorized attempts with request_id and code only (no PII).
+
+Observability (metrics): SessionMetrics counters (sessions_created, sessions_completed); record_request_latency_ms stub for API latency. Use tracing for structured logs (request_id, session_id, state, error codes).
+
+13. MVP Roadmap
 Milestone	Scope
 Phase I	Core Rust types + API + CLI
-Phase II	Fingerprinting + Session + State
+Phase II	Fingerprinting + Session + State + Events + Auth + Observability
 Phase III	TS agent loop + basic RL
 Phase IV	Financial integration + constraints
 Phase V	Full observability + cost analytics

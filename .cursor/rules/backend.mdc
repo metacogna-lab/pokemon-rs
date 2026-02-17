@@ -1,0 +1,27 @@
+---
+alwaysApply: false
+---
+task_id: "backend"
+title: Backend Task Group Root
+description: >
+  Root metadata for backend service tasks. Coordinates API, state, DB,
+  operations, security, and observability.
+
+entry_criteria:
+  - tasks/backend/ directory exists
+exit_criteria:
+  - Each backend task folder has a .mdc and meets entry bounds
+deliverables:
+  - 0001_server_skeleton.mdc
+  - 0002_session_state.mdc
+  - 0003_wallet_controls.mdc
+  - 0004_gameplay_events.mdc
+  - 0005_fingerprinter.mdc
+  - 0006_api_contracts.mdc
+  - 0007_security.mdc
+  - 0008_observability.mdc
+agent_instructions:
+  - Enforce strict adherence to OpenAPI contracts
+  - Backend agents must run TDD and integration tests before exit
+
+

@@ -1,5 +1,11 @@
 /**
- * Game Interaction Orchestrator – coordinates game interactions across agents.
+ * Game Interaction Orchestrator – session lifecycle, retries, circuit breaker.
  */
-
-export function orchestrate(): void {}
+export {
+  orchestrate,
+  runStep,
+  delay,
+  CircuitBreaker,
+  type OrchestratorOptions,
+  type StepResult,
+} from "./orchestrator";

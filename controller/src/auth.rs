@@ -48,7 +48,7 @@ pub fn role_allowed(required: Role, user_role: Role) -> bool {
 
 /// Log an unauthorized access attempt (no PII; request_id and code only).
 pub fn log_unauthorized(request_id: &str, code: &str) {
-    log::warn!(target: "auth", "unauthorized request_id={} code={}", request_id, code);
+    tracing::warn!(request_id = %request_id, code = %code, "unauthorized");
 }
 
 #[derive(Error, Debug)]

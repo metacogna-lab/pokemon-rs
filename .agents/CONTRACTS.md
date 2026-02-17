@@ -116,6 +116,25 @@ pub struct GameplayResult {
 }
 ```
 
+### ➤ Gameplay Event Record (persisted per action)
+
+```rust
+pub struct GameplayEvent {
+    pub event_id: Uuid,
+    pub session_id: Uuid,
+    pub action: JsonValue,  // GameplayAction shape
+    pub result: JsonValue,  // GameplayResult shape
+    pub timestamp: Option<DateTime<Utc>>,
+    pub reward: Option<f64>,
+}
+```
+
+API: GET /sessions/{sessionId}/events returns { events: GameplayEventRecord[] }.
+
+### ➤ Game Fingerprint (Phase 2)
+
+GET /games/{gameId}/fingerprint returns GameFingerprintResponse: gameId, rngSignature, symbolMap (symbol -> frequency), statisticalProfile (rtp_ratio, volatility).
+
 ### ➤ Reward Signals (for RL)
 
 ```rust

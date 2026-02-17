@@ -2,7 +2,7 @@
 
 ## Decisions
 
-- Axum 0.7 with tower-http TraceLayer for logging; auth via axum middleware (from_fn) checking Authorization: Bearer &lt;token&gt;; empty token rejected with 401.
+- Axum 0.7 with tower-http TraceLayer for logging; auth via axum middleware (from_fn_with_state) checking Authorization: Bearer &lt;token&gt;; when API_KEYS env is set, token must be in set; when empty (dev mode), any non-empty Bearer accepted; empty/malformed rejected with 401.
 
 ## Blockers
 

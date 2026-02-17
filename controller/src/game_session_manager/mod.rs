@@ -2,7 +2,7 @@
 //! Uses the SessionRepository trait; works with any backend.
 
 use crate::api::{
-    CreateSessionRequest, CreateSessionResponse, GameId, Session, SessionId, SessionMetrics,
+    CreateSessionRequest, CreateSessionResponse, Session, SessionId, SessionMetrics,
 };
 use crate::app_state::{DomainError, SessionRepository};
 use crate::state_engine::{transition, GameState, StateError};
@@ -76,7 +76,7 @@ impl GameSessionManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::api::PlayerProfile;
+    use crate::api::{GameId, PlayerProfile};
     use crate::persistence_metrics::InMemorySessionStore;
 
     fn make_manager() -> GameSessionManager {

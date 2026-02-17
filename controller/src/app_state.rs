@@ -1,7 +1,7 @@
 //! Application state: dependency injection container for all repositories.
 //! Uses Arc<dyn Trait> so handlers are unit-testable without a database.
 
-use crate::api::{Session, SessionId, Wallet, WalletOperationType, Money};
+use crate::api::{Money, Session, Wallet, WalletOperationType};
 use crate::state_engine::GameState;
 use async_trait::async_trait;
 use std::sync::Arc;

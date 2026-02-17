@@ -1,0 +1,6 @@
+{
+  "name": "@pokemon/game_interaction_orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Orchestrates game interactions and agent coordination"
+}

@@ -1,0 +1,1 @@
+Create new feature branch named appropriately, write tests with tdd in driving the drafting, work, test, commit when passing, merge to main, push.

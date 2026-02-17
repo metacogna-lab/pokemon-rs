@@ -21,7 +21,18 @@ This runs `openapi-generator-cli` (typescript-fetch) and writes to `agents/ts-cl
 ## Commands
 
 ```bash
-bun test          # Run all tests
+bun test          # Run all tests (excludes e2e unless RUN_E2E=1)
+bun run test:e2e  # Run e2e tests (requires backend on port 8080)
 bun run lint      # ESLint
 bun run index.ts  # Run main entry (if any)
 ```
+
+## E2E tests
+
+E2E tests run only when `RUN_E2E=1`. Start the backend first (e.g. `cargo run -p cli -- serve` or slot simulator on port 8080), then:
+
+```bash
+bun run test:e2e
+```
+
+To skip e2e in CI when no backend is available, do not set `RUN_E2E`.

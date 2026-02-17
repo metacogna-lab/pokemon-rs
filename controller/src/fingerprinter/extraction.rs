@@ -1,6 +1,5 @@
 //! Pure extraction logic: symbol frequencies, RNG signature, statistical profile.
 
-use serde_json::{Map, Value};
 use std::collections::HashMap;
 
 /// Symbol frequencies: symbol -> count.

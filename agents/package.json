@@ -17,6 +17,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "bun test",
+    "test:e2e": "RUN_E2E=1 bun test e2e",
     "generate:client": "cd .. && bunx @openapitools/openapi-generator-cli generate -i openapi.yaml -g typescript-fetch -o ./agents/ts-client --additional-properties=supportsES6=true"
   }
 }

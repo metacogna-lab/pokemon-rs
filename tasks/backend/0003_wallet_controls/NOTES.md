@@ -2,7 +2,7 @@
 
 ## Decisions
 
-- Wallet logic in persistence_metrics::InMemoryWalletStore (WalletRepository::apply_operation): debit checks balance and daily_spent + amount &lt;= daily_limit; credit increases balance. daily_spent tracked on Wallet; WALLET_LIMIT_EXCEEDED returned as 402. cost_rate not applied in Phase 1 (document for later).
+- Wallet logic in persistence_metrics::InMemoryWalletStore (WalletRepository::apply_operation): debit checks balance ≥ amount and daily_spent + amount ≤ daily_limit; credit increases balance. daily_spent tracked on Wallet; WALLET_LIMIT_EXCEEDED returned as 402. cost_rate (per-spin/query fee) deferred to Phase 2+ — document in CONTRACTS when implementing.
 
 ## Blockers
 

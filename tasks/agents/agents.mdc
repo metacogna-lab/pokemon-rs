@@ -1,0 +1,22 @@
+---
+alwaysApply: true
+---
+task_id: "agents"
+title: Agent Clients Task Group Root
+description: >
+  Root metadata for all agent development tasks. Includes TS clients,
+  planners, behavior profiles, orchestrators, and tests.
+
+entry_criteria:
+  - tasks/agents/ directory exists
+exit_criteria:
+  - All agent sub-folders contain valid .mdc files
+deliverables:
+  - 0001_ts_clients.mdc
+  - 0002_planner.mdc
+  - 0003_behavior_profiles.mdc
+  - 0004_orchestrator.mdc
+  - 0005_e2e_tests.mdc
+agent_instructions:
+  - Agents must coordinate with backend mocks for tests
+  - Ensure TS client conforms to OpenAPI schemas

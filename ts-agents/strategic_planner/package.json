@@ -1,0 +1,6 @@
+{
+  "name": "@pokemon/strategic_planner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Strategic planning agent for gaming fingerprinting"
+}

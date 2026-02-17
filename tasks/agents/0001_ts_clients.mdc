@@ -1,0 +1,23 @@
+---
+alwaysApply: false
+---
+task_id: "agents/0001_ts_clients"
+title: TS Client Bindings
+description: >
+  Generate and validate TypeScript HTTP client from OpenAPI. Single source of
+  truth: openapi.yaml → agents/ts-client. No manual API models.
+
+entry_criteria:
+  - openapi.yaml exists at repo root
+  - agents/ package has test script (bun test)
+exit_criteria:
+  - agents/ts-client exports Wallet, Session, Money, Configuration, DefaultApi
+  - ts-client.test.ts passes
+  - generate:client script regenerates from openapi.yaml
+deliverables:
+  - agents/ts-client/
+  - agents/ts-client.test.ts
+  - tasks/agents/0001_ts_clients/README.md, TDD_PLAN.md, NOTES.md
+agent_instructions:
+  - Run bun test before commit
+  - After openapi.yaml changes, run bun run generate:client from agents/

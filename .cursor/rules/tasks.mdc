@@ -1,0 +1,18 @@
+---
+alwaysApply: false
+---
+task_id: "root"
+title: Task Root Directory
+description: >
+  Top-level control file for all task folders. Ensures sub-folders are
+  processed in order. Agents must consult this for sequencing.
+
+entry_criteria:
+  - tasks/ directory exists
+exit_criteria:
+  - All sub-folder .mdc files exist and are valid
+deliverables:
+  - tasks/<domain>/<task>/… .mdc files
+agent_instructions:
+  - Enumerate all folder paths and validate child .mdc schemas
+  - Update root list when new domains/tasks are added

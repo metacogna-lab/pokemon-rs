@@ -1,0 +1,43 @@
+---
+alwaysApply: true
+---
+task_domain: "agents"
+description: >
+  Rules for testing agent modules. This control file defines
+  mandatory test categories and quality gates.
+
+entry_criteria:
+  - TypeScript agent code exists
+  - TS client bindings are generated
+
+test_types:
+  - unit
+  - integration
+  - e2e
+
+unit_tests:
+  required: true
+  coverage_threshold: 80
+  description: >
+    Models, planners, behavior profiles, and utilities must
+    be unit tested with robust assertions.
+
+integration_tests:
+  required: true
+  description: >
+    Agents should be tested against a mock backend (mock TS client)
+    verifying workflows (create session, make move, observe result).
+
+e2e_tests:
+  required: true
+  description: >
+    Full agent ↔ backend integration, verifying real API responses.
+
+quality_gates:
+  - all tests must pass
+  - coverage >= coverage_threshold
+  - no ignored tests
+
+failure_handling:
+  on_failure: >
+    Block merge, list failures in task README, update agent logic
