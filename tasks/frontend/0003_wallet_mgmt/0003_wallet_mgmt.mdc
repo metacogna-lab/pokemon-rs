@@ -1,0 +1,19 @@
+---
+alwaysApply: false
+---
+task_id: "0003_wallet_mgmt"
+title: Wallet Management
+description: >
+  Balance display, debit/credit operations, limit alerts.
+
+entry_criteria:
+  - 0001_ui_shell complete
+  - agents/ts-client with walletOperation
+exit_criteria:
+  - Balance and daily limit display
+  - Debit/credit form with validation
+  - Limit alerts when balance low or near limit
+  - Tests pass
+deliverables:
+  - WalletsPage
+  - tasks/frontend/0003_wallet_mgmt/README.md, TDD_PLAN.md, NOTES.md

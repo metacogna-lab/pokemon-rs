@@ -1,0 +1,23 @@
+---
+alwaysApply: false
+---
+task_id: "frontend"
+title: Frontend Task Group Root
+description: >
+  Root metadata for the Frontend domain. Governs the UI/UX workflows,
+  views, and API integrations.
+
+entry_criteria:
+  - tasks/frontend/ directory present
+exit_criteria:
+  - All frontend sub-folders have valid .mdc files
+deliverables:
+  - ui_shell.mdc
+  - session_dashboard.mdc
+  - wallet_mgmt.mdc
+  - fingerprint_ui.mdc
+agent_instructions:
+  - Agents must pick tasks in dependency order:
+    1. ui_shell → 2. session_dashboard → 3. wallet_mgmt → …
+  - Validate UI against TS client types
+

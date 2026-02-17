@@ -1,0 +1,19 @@
+---
+alwaysApply: false
+---
+task_id: "0004_fingerprint_ui"
+title: Fingerprint UI
+description: >
+  Game list, fingerprint detail, symbol distribution chart.
+
+entry_criteria:
+  - 0001_ui_shell complete
+  - Mock GameFingerprint type (API in backend 0005)
+exit_criteria:
+  - Game list (mock)
+  - Fingerprint detail: RNG, symbol map, stats
+  - Symbol distribution chart
+  - Tests pass
+deliverables:
+  - FingerprintsPage with mock data
+  - tasks/frontend/0004_fingerprint_ui/README.md, TDD_PLAN.md, NOTES.md

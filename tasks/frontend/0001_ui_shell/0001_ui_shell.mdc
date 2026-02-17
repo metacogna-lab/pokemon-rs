@@ -1,0 +1,19 @@
+---
+alwaysApply: false
+---
+task_id: "0001_ui_shell"
+title: UI Shell
+description: >
+  Foundational UI skeleton with navigation and API integration.
+
+entry_criteria:
+  - agents/ts-client available
+  - tasks/frontend/ directory present
+exit_criteria:
+  - React+Vite app with routes Dashboard, Sessions, Wallets, Fingerprints
+  - Layout, Nav, Loading, ErrorDisplay components
+  - API client wrapping ts-client with VITE_API_BASE_URL
+  - Component tests pass
+deliverables:
+  - frontend/ package and src/
+  - tasks/frontend/0001_ui_shell/README.md, TDD_PLAN.md, NOTES.md

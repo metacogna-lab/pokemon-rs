@@ -1,0 +1,19 @@
+---
+alwaysApply: false
+---
+task_id: "0002_session_dashboard"
+title: Session Dashboard
+description: >
+  Session list, detail, create form, play actions.
+
+entry_criteria:
+  - 0001_ui_shell complete
+  - agents/ts-client with createSession, getSession, playAction
+exit_criteria:
+  - Session list (mock or create-then-view)
+  - Session detail with state, metrics, actions
+  - Create session form; play Spin/PlaceBet/CashOut
+  - Tests pass
+deliverables:
+  - SessionsPage with session UI
+  - tasks/frontend/0002_session_dashboard/README.md, TDD_PLAN.md, NOTES.md
