@@ -1,0 +1,20 @@
+---
+alwaysApply: false
+---
+task_id: "0003_wallet_controls"
+title: Wallet Controls
+description: >
+  Debit/credit with balance and daily limit; persist and rollback on failure;
+  cost fee enforcement; WALLET_LIMIT_EXCEEDED for violations.
+
+entry_criteria:
+  - 0002_session_state complete (persistence, sessions)
+  - Wallets migration applied
+exit_criteria:
+  - Wallet logic with balance/daily limit checks; rollback on failure
+  - POST /v1/wallets/{id}/operations returns 200 or 402 WALLET_LIMIT_EXCEEDED
+  - TDD and integration tests pass
+deliverables:
+  - Wallet module in controller (debit, credit, limits, cost fee)
+  - API wiring for wallet operations
+  - Integration tests for success and limit-exceeded

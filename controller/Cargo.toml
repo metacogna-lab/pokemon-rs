@@ -1,0 +1,19 @@
+[package]
+name = "controller"
+version = "0.1.0"
+edition = "2021"
+description = "Controller: session manager, state engine, fingerprinter, RL loop, persistence"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+async-trait = "0.1"
+tokio = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

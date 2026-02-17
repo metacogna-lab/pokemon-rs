@@ -1,0 +1,22 @@
+---
+alwaysApply: false
+---
+task_id: "0002_session_state"
+title: Session State Machine and Persistence
+description: >
+  Idle → Initialized → … → Completed as pure functions; persistence and audit log;
+  invalid transition returns StateError::InvalidTransition.
+
+entry_criteria:
+  - 0001_server_skeleton complete
+  - openapi.yaml, DATASTORE.md, migrations present
+exit_criteria:
+  - state_engine with GameState, StateError, pure transitions
+  - persistence_metrics persists sessions; game_session_manager create/get/transition
+  - POST/GET /v1/sessions wired; 409 on invalid transition
+  - TDD and integration tests pass
+deliverables:
+  - controller/src/state_engine (types + transition logic)
+  - controller/src/persistence_metrics (session persist/load)
+  - controller/src/game_session_manager (create, get, transition)
+  - database/migrations SQL files (games, wallets, sessions order)

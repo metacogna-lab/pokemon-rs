@@ -1,0 +1,23 @@
+---
+alwaysApply: false
+---
+task_id: "0001_server_skeleton"
+title: Server Skeleton
+description: >
+  Generate server from OpenAPI and wire handler traits, logging, auth middleware,
+  base request/response types.
+
+entry_criteria:
+  - tasks/backend/ directory exists
+  - openapi.yaml present
+  - cargo build --workspace succeeds
+exit_criteria:
+  - CLI serve subcommand starts HTTP server on :8080
+  - GET /v1/health returns 200 and healthy JSON
+  - Logging and auth middleware in place; 401 on invalid auth
+  - TDD tests written first; all tests pass
+deliverables:
+  - Handler traits or layer for health
+  - Logging middleware
+  - Auth middleware Bearer token check
+  - OpenAPI-aligned health and error types

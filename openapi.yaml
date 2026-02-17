@@ -1,0 +1,656 @@
+openapi: 3.0.3
+info:
+  title: Autonomous Slot Gameplay API
+  description: |
+    API specification for the autonomous slot machine gameplay system,
+    including session management, state transitions, gameplay actions,
+    wallet/financial constraints, and result reporting.
+  version: 1.0.0
+
+servers:
+  - url: https://api.slotgame.example.com/v1
+    description: Production server
+  - url: http://localhost:8080/v1
+    description: Local development
+
+tags:
+  - name: Session
+    description: Session lifecycle and state
+  - name: Gameplay
+    description: Actions within a session (spin, bet)
+  - name: Wallet
+    description: Financial and wallet operations
+  - name: Health
+    description: Service health
+  - name: RL
+    description: Reinforcement learning export
+
+components:
+  schemas:
+
+    # ─────────────────────────────────────────────────────────────
+    # Core Domain Models
+    # ─────────────────────────────────────────────────────────────
+
+    GameId:
+      type: string
+      format: uuid
+      example: "4f9b8e88-1f2a-4c34-8e2a-a7fe9ef7b654"
+
+    SessionId:
+      type: string
+      format: uuid
+      example: "c9d19e0d-4a61-4f09-87d5-aa2ec5d376b1"
+
+    Currency:
+      type: string
+      enum:
+        - AUD
+        - USD
+        - EUR
+      example: AUD
+
+    Money:
+      type: object
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: number
+          format: double
+          minimum: 0
+        currency:
+          $ref: '#/components/schemas/Currency'
+      example:
+        amount: 10.5
+        currency: AUD
+
+    Wallet:
+      type: object
+      required:
+        - walletId
+        - balance
+        - dailyLimit
+      properties:
+        walletId:
+          $ref: '#/components/schemas/SessionId'
+        balance:
+          $ref: '#/components/schemas/Money'
+        dailyLimit:
+          $ref: '#/components/schemas/Money'
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable error description
+            details:
+              type: object
+              nullable: true
+      example:
+        error:
+          code: "WALLET_LIMIT_EXCEEDED"
+          message: "Requested spend exceeds daily limit."
+
+    # ─────────────────────────────────────────────────────────────
+    # Session & State
+    # ─────────────────────────────────────────────────────────────
+
+    GameState:
+      type: string
+      enum:
+        - Idle
+        - Initialized
+        - Probing
+        - Playing
+        - Evaluating
+        - Completed
+      example: Playing
+
+    SessionMetrics:
+      type: object
+      required:
+        - totalSpins
+        - totalPayout
+      properties:
+        totalSpins:
+          type: integer
+          minimum: 0
+        totalPayout:
+          type: number
+          format: double
+
+    Session:
+      type: object
+      required:
+        - sessionId
+        - gameId
+        - state
+        - metrics
+      properties:
+        sessionId:
+          $ref: '#/components/schemas/SessionId'
+        gameId:
+          $ref: '#/components/schemas/GameId'
+        state:
+          $ref: '#/components/schemas/GameState'
+        metrics:
+          $ref: '#/components/schemas/SessionMetrics'
+
+    PlayerProfile:
+      type: object
+      required:
+        - behaviorType
+      properties:
+        behaviorType:
+          type: string
+          description: Human simulation profile (e.g., "conservative", "aggressive")
+        maxBet:
+          $ref: '#/components/schemas/Money'
+
+    CreateSessionRequest:
+      type: object
+      required:
+        - gameId
+        - playerProfile
+      properties:
+        gameId:
+          $ref: '#/components/schemas/GameId'
+        playerProfile:
+          $ref: '#/components/schemas/PlayerProfile'
+
+    CreateSessionResponse:
+      type: object
+      required:
+        - sessionId
+        - state
+      properties:
+        sessionId:
+          $ref: '#/components/schemas/SessionId'
+        state:
+          $ref: '#/components/schemas/GameState'
+
+    # ─────────────────────────────────────────────────────────────
+    # Gameplay Actions & Results
+    # ─────────────────────────────────────────────────────────────
+
+    GameplayAction:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - PlaceBet
+            - Spin
+            - CashOut
+        amount:
+          $ref: '#/components/schemas/Money'
+      description: |
+        Action issued during a session. "amount" is only required for PlaceBet.
+
+    GameplayResult:
+      type: object
+      properties:
+        payout:
+          $ref: '#/components/schemas/Money'
+          nullable: true
+        symbols:
+          type: array
+          items:
+            type: string
+      example:
+        payout:
+          amount: 15.0
+          currency: AUD
+        symbols:
+          - "Cherry"
+          - "Cherry"
+          - "Bar"
+
+    PlayActionRequest:
+      type: object
+      required:
+        - sessionId
+        - action
+      properties:
+        sessionId:
+          $ref: '#/components/schemas/SessionId'
+        action:
+          $ref: '#/components/schemas/GameplayAction'
+
+    PlayActionResponse:
+      type: object
+      required:
+        - session
+        - result
+      properties:
+        session:
+          $ref: '#/components/schemas/Session'
+        result:
+          $ref: '#/components/schemas/GameplayResult'
+
+    GameplayEventRecord:
+      type: object
+      required:
+        - eventId
+        - sessionId
+        - action
+        - result
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        action:
+          $ref: '#/components/schemas/GameplayAction'
+        result:
+          $ref: '#/components/schemas/GameplayResult'
+        timestamp:
+          type: string
+          format: date-time
+          nullable: true
+        reward:
+          type: number
+          format: float
+          nullable: true
+
+    SessionEventsResponse:
+      type: object
+      required:
+        - events
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameplayEventRecord'
+
+    # ─────────────────────────────────────────────────────────────
+    # Wallet Operations
+    # ─────────────────────────────────────────────────────────────
+
+    WalletOperationRequest:
+      type: object
+      required:
+        - walletId
+        - operation
+        - amount
+      properties:
+        walletId:
+          $ref: '#/components/schemas/SessionId'
+        operation:
+          type: string
+          enum:
+            - debit
+            - credit
+        amount:
+          $ref: '#/components/schemas/Money'
+
+    WalletOperationResponse:
+      type: object
+      required:
+        - wallet
+      properties:
+        wallet:
+          $ref: '#/components/schemas/Wallet'
+
+    GameFingerprintResponse:
+      type: object
+      required:
+        - gameId
+        - rngSignature
+        - symbolMap
+        - statisticalProfile
+      properties:
+        gameId:
+          type: string
+          format: uuid
+        rngSignature:
+          type: string
+        symbolMap:
+          type: object
+          additionalProperties:
+            type: number
+          description: Symbol -> frequency (0..1)
+        statisticalProfile:
+          type: object
+          properties:
+            rtp_ratio:
+              type: number
+              format: float
+            volatility:
+              type: number
+              format: float
+
+    # ─────────────────────────────────────────────────────────────
+    # RL Experience (Gymnasium-compatible)
+    # ─────────────────────────────────────────────────────────────
+
+    Experience:
+      type: object
+      required:
+        - id
+        - sessionId
+        - state
+        - action
+        - reward
+        - nextState
+        - done
+      properties:
+        id:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        state:
+          type: object
+          description: State before action (JSONB)
+        action:
+          type: object
+          description: Chosen action (JSONB)
+        reward:
+          type: number
+          format: float
+        nextState:
+          type: object
+          description: State after action (JSONB)
+        done:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    RlExportResponse:
+      type: object
+      required:
+        - experiences
+      properties:
+        experiences:
+          type: array
+          items:
+            $ref: '#/components/schemas/Experience'
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: |
+        Bearer API Token: "Authorization: Bearer <token>"
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+
+  # ─────────────────────────────────────────────────────────────
+  # Health & System
+  # ─────────────────────────────────────────────────────────────
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Get service health
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+
+  # ─────────────────────────────────────────────────────────────
+  # Session Management
+  # ─────────────────────────────────────────────────────────────
+
+  /sessions:
+    post:
+      tags:
+        - Session
+      summary: Create a new gameplay session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        "201":
+          description: Created session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSessionResponse'
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sessions/{sessionId}:
+    get:
+      tags:
+        - Session
+      summary: Get current session state and metrics
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            $ref: '#/components/schemas/SessionId'
+      responses:
+        "200":
+          description: Current session status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ─────────────────────────────────────────────────────────────
+  # Gameplay Actions
+  # ─────────────────────────────────────────────────────────────
+
+  /sessions/{sessionId}/action:
+    post:
+      tags:
+        - Gameplay
+      summary: Execute a gameplay action
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            $ref: '#/components/schemas/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayActionRequest'
+      responses:
+        "200":
+          description: Action executed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayActionResponse'
+        "400":
+          description: Invalid action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "409":
+          description: State conflict (invalid transition)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sessions/{sessionId}/events:
+    get:
+      tags:
+        - Session
+      summary: List gameplay events for a session
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            $ref: '#/components/schemas/SessionId'
+      responses:
+        "200":
+          description: Events for the session (ordered by timestamp)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionEventsResponse'
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /games/{gameId}/fingerprint:
+    get:
+      tags:
+        - Gameplay
+      summary: Get game fingerprint (RNG signature, symbol map, statistical profile)
+      parameters:
+        - in: path
+          name: gameId
+          required: true
+          schema:
+            $ref: '#/components/schemas/GameId'
+      responses:
+        "200":
+          description: Fingerprint for the game
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameFingerprintResponse'
+        "404":
+          description: Game or fingerprint not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ─────────────────────────────────────────────────────────────
+  # Wallet Endpoints
+  # ─────────────────────────────────────────────────────────────
+
+  /wallets/{walletId}/operations:
+    post:
+      tags:
+        - Wallet
+      summary: Perform a wallet debit or credit
+      parameters:
+        - in: path
+          name: walletId
+          required: true
+          schema:
+            $ref: '#/components/schemas/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletOperationRequest'
+      responses:
+        "200":
+          description: Wallet operation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletOperationResponse'
+        "400":
+          description: Invalid wallet request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "402":
+          description: Insufficient balance / limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ─────────────────────────────────────────────────────────────
+  # RL Export (Gymnasium-compatible)
+  # ─────────────────────────────────────────────────────────────
+
+  /rl/export:
+    get:
+      tags:
+        - RL
+      summary: Export experience data for offline training
+      parameters:
+        - in: query
+          name: sessionId
+          required: true
+          schema:
+            $ref: '#/components/schemas/SessionId'
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Experiences for the session (Gymnasium-compatible)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RlExportResponse'
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
