@@ -1,0 +1,31 @@
+# Rust build artefacts
+target/
+
+# Node / Bun
+node_modules/
+frontend/node_modules/
+agents/node_modules/
+
+# Frontend build output (built inside Docker)
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
+
+# Secrets — never send to build context
+.env
+.env.production
+
+# Dev tooling noise
+.git/
+.github/
+.cursor/
+*.md
+docs/
+tasks/
+scripts/
+tests/
+media/
+archive/
+
+# OS noise
+.DS_Store
+**/.DS_Store

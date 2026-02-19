@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { ErrorDisplay } from "./ErrorBoundary";
+import { ErrorDisplay, ErrorBoundary } from "./ErrorBoundary";
 
 describe("ErrorDisplay", () => {
   it("renders error message from string", () => {
@@ -18,5 +18,29 @@ describe("ErrorDisplay", () => {
   it("returns null when error is null", () => {
     const { container } = render(<ErrorDisplay error={null} />);
     expect(container.firstChild).toBeNull();
+  });
+});
+
+function Thrower({ message }: { message: string }): never {
+  throw new Error(message);
+}
+
+describe("ErrorBoundary", () => {
+  it("catches child render error and displays message", () => {
+    render(
+      <ErrorBoundary>
+        <Thrower message="Child crashed" />
+      </ErrorBoundary>
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Child crashed");
+  });
+
+  it("renders children when no error", () => {
+    render(
+      <ErrorBoundary>
+        <span>Content</span>
+      </ErrorBoundary>
+    );
+    expect(screen.getByText("Content")).toBeInTheDocument();
   });
 });

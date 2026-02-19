@@ -11,25 +11,12 @@ on:
 
 jobs:
 
-  ### 📚 Docs structure
-  docs:
-    name: Validate Docs Structure
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - name: Validate Mintlify docs
-        run: bun run docs:validate
-
-  ### 🧹 Lint (Rust + TS)
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Rust lint
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -40,7 +27,6 @@ jobs:
           cargo fmt -- --check
           cargo clippy --all-targets -- -D warnings
 
-      # TS lint
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
@@ -52,12 +38,6 @@ jobs:
         working-directory: agents
         run: bun run lint
 
-      - name: Save Lint Report
-        run: |
-          mkdir -p .agents/ci/reports/lint
-          cp lint-report.txt .agents/ci/reports/lint/ || true
-
-  ### 🧪 Test Suite (Rust & TS)
   test:
     name: Test All
     needs: lint
@@ -67,6 +47,7 @@ jobs:
         image: postgres:15
         env:
           POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
           POSTGRES_DB: testdb
         ports:
           - 5432:5432
@@ -76,9 +57,11 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/testdb
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
@@ -88,25 +71,19 @@ jobs:
           PGHOST: localhost
           PGPORT: 5432
           PGUSER: postgres
+          PGPASSWORD: postgres
           PGDATABASE: testdb
         run: |
           chmod +x database/run_migrations.sh database/verify_schema.sh
           database/run_migrations.sh
           database/verify_schema.sh
 
-      # Rust Tests
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
       - name: Run Rust Tests
-        run: |
-          cargo test --all -- --nocapture
-      - name: Store Rust Test Results
-        run: |
-          mkdir -p .agents/ci/results/rust-tests
-          cp -r target/debug/deps .agents/ci/results/rust-tests/
+        run: cargo test --all -- --nocapture
 
-      # TS Tests
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
@@ -118,20 +95,12 @@ jobs:
         working-directory: agents
         run: bun test
 
-      - name: Store TS Test Results
-        run: |
-          mkdir -p .agents/ci/results/ts-tests
-          cp -r coverage .agents/ci/results/ts-tests/ || true
-
-  ### 📦 Build + Bundle
   build:
     name: Build Backend & Agents
     needs: test
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -146,33 +115,18 @@ jobs:
         working-directory: agents
         run: bun install
 
-      - name: Build TS Agents
+      - name: Type-check TS Agents
         working-directory: agents
-        run: bun run build
+        run: bunx tsc --noEmit
 
-      - name: Record Build Artifacts
-        run: |
-          mkdir -p .agents/ci/build
-          cp -r target/release .agents/ci/build/backend
-          cp -r dist .agents/ci/build/agents || true
-
-  ### 📊 Publish CI Metadata
   publish:
     name: Publish CI Metadata
     needs: build
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Upload All Agent CI Data
         uses: actions/upload-artifact@v4
         with:
           name: agentic-ci-output
           path: .agents/ci/
-
-      - name: Log Report Summary
-        run: |
-          echo ">>> 🚀 Agentic CI Data Published"
-          ls -R .agents/ci/

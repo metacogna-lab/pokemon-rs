@@ -7,4 +7,4 @@
 
 ## Test Results
 
-- (To be filled after implementation)
+- `bun run test`: WalletsPage tests pass (balance/limit display after operation, limit alert when balance low). Manual: enter wallet ID, submit debit/credit, see balance and alerts.

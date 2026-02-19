@@ -128,6 +128,11 @@ pub struct GameplayResult {
 #[serde(rename_all = "camelCase")]
 pub struct PlayActionRequest {
     pub action: GameplayAction,
+    /// Measured human-likeness score for this action (0.0–1.0).
+    /// Optional and backward-compatible — defaults to 0.5 if absent.
+    /// Server clamps to [0.0, 1.0] before use.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub human_likeness: Option<f64>,
 }
 
 /// Play action response per OpenAPI PlayActionResponse.
@@ -158,6 +163,44 @@ pub struct WalletOperationRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WalletOperationResponse {
     pub wallet: Wallet,
+}
+
+/// Request for POST /wallets — create a new wallet.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateWalletRequest {
+    /// Client-supplied wallet ID; server generates one via Uuid::new_v4() if absent.
+    pub wallet_id: Option<SessionId>,
+    pub balance: Money,
+    pub daily_limit: Money,
+}
+
+/// Response for GET /sessions/{id}/events.
+#[derive(Debug, Serialize)]
+pub struct SessionEventsResponse {
+    pub events: Vec<SessionEventRecord>,
+}
+
+/// Single event record — camelCase to match OpenAPI GameplayEventRecord schema.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionEventRecord {
+    pub event_id: uuid::Uuid,
+    pub session_id: uuid::Uuid,
+    pub action: serde_json::Value,
+    pub result: serde_json::Value,
+    pub timestamp: Option<chrono::DateTime<chrono::Utc>>,
+    pub reward: Option<f64>,
+}
+
+/// Response for GET /games/{gameId}/fingerprint.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GameFingerprintResponse {
+    pub game_id: uuid::Uuid,
+    pub rng_signature: String,
+    pub symbol_map: serde_json::Value,
+    pub statistical_profile: serde_json::Value,
 }
 
 /// Health check response; GET /v1/health.

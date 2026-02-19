@@ -60,11 +60,11 @@ pub struct ExportResponse {
 }
 
 /// Exports experiences for a session with pagination.
-pub fn export_experiences<S: ExperienceStore>(
-    store: &S,
+pub async fn export_experiences(
+    store: &dyn ExperienceStore,
     params: ExportParams,
 ) -> Result<ExportResponse, StoreError> {
-    let list = store.list_by_session(params.session_id)?;
+    let list = store.list_by_session(params.session_id).await?;
     let limit = params.limit.max(1).min(10_000);
     let offset = params.offset.min(list.len() as u32);
     let start = offset as usize;
@@ -80,8 +80,8 @@ mod tests {
     use crate::rl_feedback_loop::InMemoryStore;
     use serde_json::json;
 
-    #[test]
-    fn export_returns_correct_subset() {
+    #[tokio::test]
+    async fn export_returns_correct_subset() {
         let store = InMemoryStore::new();
         let sid = Uuid::new_v4();
         for i in 0..5 {
@@ -93,28 +93,28 @@ mod tests {
                 json!({}),
                 false,
             );
-            store.insert_experience(&exp).unwrap();
+            store.insert_experience(&exp).await.unwrap();
         }
         let params = ExportParams {
             session_id: sid,
             limit: 2,
             offset: 1,
         };
-        let res = export_experiences(&store, params).unwrap();
+        let res = export_experiences(&store, params).await.unwrap();
         assert_eq!(res.experiences.len(), 2);
         let rewards: Vec<f64> = res.experiences.iter().map(|r| r.reward).collect();
         assert!(rewards.iter().all(|r| (0.0..=4.0).contains(r)));
     }
 
-    #[test]
-    fn export_empty_for_unknown_session() {
+    #[tokio::test]
+    async fn export_empty_for_unknown_session() {
         let store = InMemoryStore::new();
         let params = ExportParams {
             session_id: Uuid::new_v4(),
             limit: 10,
             offset: 0,
         };
-        let res = export_experiences(&store, params).unwrap();
+        let res = export_experiences(&store, params).await.unwrap();
         assert!(res.experiences.is_empty());
     }
 

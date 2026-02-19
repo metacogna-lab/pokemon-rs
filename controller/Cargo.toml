@@ -5,6 +5,7 @@ edition = "2021"
 description = "Controller: session manager, state engine, fingerprinter, RL loop, persistence"
 
 [dependencies]
+sqlx = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }

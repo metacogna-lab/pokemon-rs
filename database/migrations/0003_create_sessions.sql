@@ -1,7 +1,10 @@
 -- 0003_create_sessions.sql
-CREATE TYPE game_state AS ENUM (
+DO $$ BEGIN
+  CREATE TYPE game_state AS ENUM (
     'Idle', 'Initialized', 'Probing', 'Playing', 'Evaluating', 'Completed'
-);
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS sessions (
     session_id UUID PRIMARY KEY,

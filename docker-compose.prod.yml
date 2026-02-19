@@ -1,0 +1,82 @@
+name: pokemon-rs
+
+# ── Production environment ────────────────────────────────────────────────────
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Secrets MUST be injected as real environment variables before running
+# (e.g. via CI/CD pipeline, Kubernetes Secrets, AWS SSM, Doppler, etc.).
+# Do NOT use a .env file in production. Required env vars:
+#   DATABASE_URL, API_KEYS, PGPASSWORD (for postgres service)
+#
+# See .env.production.example for the full variable list.
+
+services:
+
+  # ── Postgres 16 ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB:       ${PGDATABASE:-pokemonrs}
+      POSTGRES_USER:     ${PGUSER:-kalastra}
+      POSTGRES_PASSWORD: ${PGPASSWORD:?PGPASSWORD must be set}
+    # Postgres is NOT exposed to the host in production — only reachable by
+    # other services on the internal Docker network.
+    expose:
+      - "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-kalastra} -d ${PGDATABASE:-pokemonrs}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Rust API ──────────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    restart: always
+    environment:
+      NODE_ENV:     production
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
+      BIND_ADDR:    0.0.0.0:8080
+      RUST_LOG:     ${RUST_LOG:-warn}
+      API_KEYS:     ${API_KEYS:?API_KEYS must be set}
+      COST_PER_SPIN:           ${COST_PER_SPIN:-0.01}
+      HUMAN_LIKENESS_WEIGHT:   ${HUMAN_LIKENESS_WEIGHT:-0.3}
+      RATE_LIMIT_RPM:          ${RATE_LIMIT_RPM:-60}
+    # API is NOT exposed directly; nginx proxies /v1 traffic.
+    expose:
+      - "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/v1/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ── nginx + React frontend ────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        # /v1 → nginx proxies to api:8080 (relative URL, no CORS needed).
+        VITE_API_BASE_URL: /v1
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

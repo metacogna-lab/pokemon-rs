@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import type {
   Session,
@@ -7,22 +8,109 @@ import type {
   PlayActionRequest,
   PlayActionResponse,
   Money,
+  SessionEventRecord,
+  RlExperience,
 } from "../../../agents/ts-client";
 import { Loading } from "../components/Loading";
 import { ErrorDisplay } from "../components/ErrorBoundary";
 
-const MOCK_SESSIONS: Session[] = [];
+/** Color-code reward badge: green=positive, red=negative, grey=zero. */
+function RewardBadge({ reward }: { reward?: number }) {
+  if (reward === undefined || reward === null) return null;
+  const cls =
+    reward > 0
+      ? "bg-emerald-900/50 text-emerald-400"
+      : reward < 0
+      ? "bg-red-900/50 text-red-400"
+      : "bg-slate-700 text-slate-400";
+  return (
+    <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${cls}`}>
+      {reward > 0 ? "+" : ""}{reward.toFixed(3)}
+    </span>
+  );
+}
 
-/** Sessions page: list, create form, detail with actions. */
+/** Chronological event timeline panel. */
+function EventsTimeline({ events }: { events: SessionEventRecord[] }) {
+  if (events.length === 0) return <p className="text-slate-400 text-sm">No events recorded.</p>;
+  return (
+    <ol className="space-y-1">
+      {events.map((ev) => (
+        <li key={ev.eventId} className="flex items-center gap-2 text-sm border-b border-slate-700 py-1">
+          <span className="text-slate-500 w-5 text-right">{events.indexOf(ev) + 1}.</span>
+          <span className="flex-1 font-mono text-xs text-slate-300 truncate">
+            {JSON.stringify(ev.action)}
+          </span>
+          {ev.timestamp && (
+            <span className="text-slate-500 text-xs shrink-0">
+              {new Date(ev.timestamp).toLocaleTimeString()}
+            </span>
+          )}
+          <RewardBadge reward={ev.reward} />
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** RL export summary panel. */
+function RlPanel({ sessionId }: { sessionId: string }) {
+  const [experiences, setExperiences] = useState<RlExperience[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.getRlExport(sessionId, 1000, 0);
+      setExperiences(res.experiences);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <p className="text-slate-400 text-sm">Loading RL data…</p>;
+  if (error) return <p className="text-red-400 text-sm">{error}</p>;
+  if (experiences === null) {
+    return (
+      <button
+        onClick={() => void fetch()}
+        className="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-sm"
+      >
+        Load RL Export
+      </button>
+    );
+  }
+
+  const meanReward =
+    experiences.length > 0
+      ? experiences.reduce((s, e) => s + e.reward, 0) / experiences.length
+      : 0;
+  return (
+    <div className="text-sm space-y-1">
+      <p>Experiences: <span className="font-mono">{experiences.length}</span></p>
+      <p>Mean reward: <span className="font-mono">{meanReward.toFixed(4)}</span></p>
+    </div>
+  );
+}
+
+/** Sessions page: list, create form, detail with actions, events timeline, RL panel. */
 export function SessionsPage() {
-  const [sessions, setSessions] = useState<Session[]>(MOCK_SESSIONS);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    searchParams.get("selected")
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createGameId, setCreateGameId] = useState("");
   const [createBehavior, setCreateBehavior] = useState("conservative");
   const [detailSession, setDetailSession] = useState<Session | null>(null);
   const [lastResult, setLastResult] = useState<PlayActionResponse | null>(null);
+  const [events, setEvents] = useState<SessionEventRecord[]>([]);
 
   useEffect(() => {
     if (selectedId) {
@@ -41,8 +129,18 @@ export function SessionsPage() {
     } else {
       setDetailSession(null);
       setLastResult(null);
+      setEvents([]);
     }
   }, [selectedId]);
+
+  const refreshEvents = async (sid: string) => {
+    try {
+      const res = await api.getSessionEvents(sid);
+      setEvents(res.events);
+    } catch {
+      // Non-fatal
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +162,7 @@ export function SessionsPage() {
       setSessions((prev) => [session, ...prev]);
       setSelectedId(res.sessionId);
       setDetailSession(session);
+      setEvents([]);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -78,7 +177,6 @@ export function SessionsPage() {
     setLastResult(null);
     try {
       const req: PlayActionRequest = {
-        sessionId: selectedId,
         action: amount ? { type: action, amount } : { type: action },
       };
       const res = await api.playAction(selectedId, req);
@@ -87,6 +185,8 @@ export function SessionsPage() {
       setSessions((prev) =>
         prev.map((s) => (s.sessionId === selectedId ? res.session : s))
       );
+      // Refresh events after each action.
+      await refreshEvents(selectedId);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -159,9 +259,9 @@ export function SessionsPage() {
       </section>
 
       {detailSession && !loading && (
-        <section className="border border-slate-600 rounded p-4">
-          <h2 className="text-lg font-medium mb-4">Session Detail</h2>
-          <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+        <section className="border border-slate-600 rounded p-4 space-y-4">
+          <h2 className="text-lg font-medium">Session Detail</h2>
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <div>State: <span className="font-mono">{detailSession.state}</span></div>
             <div>Game ID: <span className="font-mono">{detailSession.gameId}</span></div>
             <div>Total Spins: {detailSession.metrics.totalSpins}</div>
@@ -188,11 +288,23 @@ export function SessionsPage() {
             </button>
           </div>
           {lastResult?.result && (
-            <div className="mt-4 p-2 rounded bg-slate-800 text-sm">
+            <div className="p-2 rounded bg-slate-800 text-sm">
               Last result: payout {lastResult.result.payout?.amount ?? 0} {lastResult.result.payout?.currency ?? ""}
               {lastResult.result.symbols?.length ? ` | symbols: ${lastResult.result.symbols.join(", ")}` : ""}
             </div>
           )}
+
+          {/* Events timeline */}
+          <div>
+            <h3 className="text-sm font-medium mb-2">Events</h3>
+            <EventsTimeline events={events} />
+          </div>
+
+          {/* RL export panel */}
+          <div>
+            <h3 className="text-sm font-medium mb-2">RL Export</h3>
+            {selectedId && <RlPanel sessionId={selectedId} />}
+          </div>
         </section>
       )}
     </div>

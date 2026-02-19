@@ -1,0 +1,79 @@
+name: pokemon-rs
+
+# ── Dev environment (default) ─────────────────────────────────────────────────
+# Usage:
+#   docker compose up               # start all services
+#   docker compose up postgres api  # backend + DB only
+#   docker compose down -v          # destroy including volumes
+#
+# Secrets come from .env (gitignored). Copy .env.example → .env first.
+
+services:
+
+  # ── Postgres 16 ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       pokemonrs
+      POSTGRES_USER:     kalastra
+      POSTGRES_PASSWORD: PokemonAdminDB123!
+    ports:
+      - "${PGPORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kalastra -d pokemonrs"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ── Rust API ──────────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api.dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Override PG vars to target the postgres container (not localhost).
+      NODE_ENV:     dev
+      PGHOST:       postgres
+      PGPORT:       "5432"
+      PGUSER:       kalastra
+      PGDATABASE:   pokemonrs
+      PGPASSWORD:   PokemonAdminDB123!
+      DATABASE_URL: postgres://kalastra:PokemonAdminDB123!@postgres:5432/pokemonrs
+      RUST_LOG:     "${RUST_LOG:-info}"
+    ports:
+      - "${BIND_PORT:-8080}:8080"
+    volumes:
+      # Bind-mount source for live reload via cargo-watch.
+      - .:/app
+      # Named volumes prevent host node_modules / cargo cache from being shadowed.
+      - cargo_registry:/usr/local/cargo/registry
+      - cargo_target:/app/target
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Vite dev server ───────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend.dev
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: "http://localhost:${BIND_PORT:-8080}/v1"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+
+volumes:
+  postgres_data:
+  cargo_registry:
+  cargo_target:

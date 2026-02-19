@@ -5,6 +5,7 @@ const links = [
   { to: "/sessions", label: "Sessions" },
   { to: "/wallets", label: "Wallets" },
   { to: "/fingerprints", label: "Fingerprints" },
+  { to: "/rl", label: "RL" },
 ];
 
 /** Top nav with links to main sections. */

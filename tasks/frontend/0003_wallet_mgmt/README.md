@@ -6,10 +6,10 @@ Provide interfaces to view and manage wallets.
 
 ## Acceptance Criteria
 
-- [ ] Balance display (Wallet.balance, Wallet.dailyLimit)
-- [ ] Debit/credit form: walletId, operation, amount
-- [ ] Limit alerts when near or over daily limit
-- [ ] Uses Wallet, WalletOperationRequest, WalletOperationResponse from ts-client
+- [x] Balance display (Wallet.balance, Wallet.dailyLimit)
+- [x] Debit/credit form: walletId, operation, amount
+- [x] Limit alerts when near or over daily limit
+- [x] Uses Wallet, WalletOperationRequest, WalletOperationResponse from ts-client
 
 ## Dependencies
 

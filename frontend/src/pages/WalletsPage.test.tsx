@@ -23,6 +23,7 @@ describe("WalletsPage", () => {
         walletId: "w1",
         balance: { amount: 100, currency: "AUD" },
         dailyLimit: { amount: 500, currency: "AUD" },
+        dailySpent: { amount: 0, currency: "AUD" },
       },
     });
 
@@ -49,6 +50,7 @@ describe("WalletsPage", () => {
         walletId: "w1",
         balance: { amount: 5, currency: "AUD" },
         dailyLimit: { amount: 500, currency: "AUD" },
+        dailySpent: { amount: 0, currency: "AUD" },
       },
     });
 

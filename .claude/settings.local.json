@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/Users/nullzero/Metacogna/pokemon-rs/agents/index.ts << 'TSEOF'\n/**\n * pokemon-ts-agents: entry point exports.\n *\n * Import individual agents directly for production use:\n *   import { orchestrate } from \"./game_interaction_orchestrator\";\n *   import { plan } from \"./strategic_planner\";\n *   import { infer } from \"./rl_model_runner\";\n */\nexport * from \"./ts-client/index.ts\";\nexport * from \"./strategic_planner/index.ts\";\nexport * from \"./game_interaction_orchestrator/index.ts\";\nTSEOF)",
+      "Bash(cargo test:*)",
+      "Bash(/Users/nullzero/Metacogna/pokemon-rs/cli/src/error.rs << 'RUSTEOF'\n//! Local HTTP error wrapper: converts DomainError → \\(StatusCode, JSON\\) via IntoResponse.\n\nuse axum::{\n    http::StatusCode,\n    response::{IntoResponse, Response},\n    Json,\n};\nuse controller::api::{ErrorCode, ErrorResponse};\nuse controller::app_state::DomainError;\n\n/// Newtype wrapper satisfying Axum's orphan rule: neither DomainError nor IntoResponse\n/// is defined here, so we cannot impl IntoResponse for DomainError directly.\npub struct HttpError\\(pub DomainError\\);\n\nimpl From<DomainError> for HttpError {\n    fn from\\(e: DomainError\\) -> Self {\n        Self\\(e\\)\n    }\n}\n\nimpl IntoResponse for HttpError {\n    fn into_response\\(self\\) -> Response {\n        let \\(status, body\\) = match &self.0 {\n            DomainError::NotFound\\(_\\) => \\(StatusCode::NOT_FOUND, ErrorResponse::not_found\\(self.0.to_string\\(\\)\\)\\),\n            DomainError::InvalidTransition { .. } => \\(StatusCode::CONFLICT, ErrorResponse::state_error\\(self.0.to_string\\(\\)\\)\\),\n            DomainError::WalletLimitExceeded => \\(StatusCode::PAYMENT_REQUIRED, ErrorResponse::wallet_limit_exceeded\\(self.0.to_string\\(\\)\\)\\),\n            DomainError::InvalidInput\\(_\\) => \\(StatusCode::BAD_REQUEST, ErrorResponse::invalid_input\\(self.0.to_string\\(\\)\\)\\),\n            DomainError::RateLimitExceeded => \\(StatusCode::TOO_MANY_REQUESTS, ErrorResponse::from_code\\(ErrorCode::RateLimit, self.0.to_string\\(\\)\\)\\),\n            DomainError::Internal\\(_\\) => \\(StatusCode::INTERNAL_SERVER_ERROR, ErrorResponse::internal_error\\(self.0.to_string\\(\\)\\)\\),\n        };\n        \\(status, Json\\(body\\)\\).into_response\\(\\)\n    }\n}\nRUSTEOF)",
+      "Bash(cargo build:*)",
+      "Bash(\"/Users/nullzero/Library/Application Support/reflex/bun/bin/bun\" test)",
+      "Bash(\"/Users/nullzero/Library/Application Support/reflex/bun/bin/bun\" test rl_model_runner/train.test.ts)",
+      "Bash(\"/Users/nullzero/Library/Application Support/reflex/bun/bin/bun\" run build)",
+      "Bash(\"/Users/nullzero/Library/Application Support/reflex/bun/bin/bun\" run test)"
+    ]
+  }
+}

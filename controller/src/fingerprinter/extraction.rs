@@ -26,19 +26,29 @@ pub fn extract_symbol_frequencies(spin_symbols: &[Vec<String>]) -> HashMap<Strin
         .collect()
 }
 
-/// Deterministic digest of outcome sequence for RNG signature.
+/// Stable deterministic digest of outcome sequence for RNG signature.
+/// Uses FNV-1a 64-bit hash (platform-independent, unlike DefaultHasher).
 pub fn rng_signature_digest(spin_symbols: &[Vec<String>], max_symbols: usize) -> String {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
     let flat: Vec<&str> = spin_symbols
         .iter()
         .flat_map(|r| r.iter().map(String::as_str))
         .take(max_symbols)
         .collect();
     let s = flat.join(",");
-    let mut h = DefaultHasher::new();
-    s.hash(&mut h);
-    format!("{:x}", h.finish())
+    let hash = fnv1a_64(s.as_bytes());
+    format!("{hash:016x}")
+}
+
+/// FNV-1a 64-bit hash: stable across builds, platforms, and Rust versions.
+fn fnv1a_64(data: &[u8]) -> u64 {
+    const OFFSET_BASIS: u64 = 0xcbf2_9ce4_8422_2325;
+    const FNV_PRIME: u64 = 0x0000_0100_0000_01b3;
+    let mut hash = OFFSET_BASIS;
+    for &byte in data {
+        hash ^= u64::from(byte);
+        hash = hash.wrapping_mul(FNV_PRIME);
+    }
+    hash
 }
 
 /// Statistical profile: RTP-like and volatility.
@@ -94,5 +104,21 @@ mod tests {
         let p = build_statistical_profile(&f, 100.0, 95.0);
         assert!(p.rtp_ratio >= 0.0 && p.rtp_ratio <= 10.0);
         assert_eq!(p.rtp_ratio, 0.95);
+    }
+
+    #[test]
+    fn rng_signature_is_stable_and_deterministic() {
+        let spins = vec![vec!["A".into(), "B".into()], vec!["C".into()]];
+        let d1 = rng_signature_digest(&spins, 100);
+        let d2 = rng_signature_digest(&spins, 100);
+        assert_eq!(d1, d2);
+        assert_eq!(d1.len(), 16, "should be 16 hex chars (64-bit FNV)");
+    }
+
+    #[test]
+    fn rng_signature_differs_for_different_sequences() {
+        let s1 = vec![vec!["A".into()]];
+        let s2 = vec![vec!["B".into()]];
+        assert_ne!(rng_signature_digest(&s1, 10), rng_signature_digest(&s2, 10));
     }
 }

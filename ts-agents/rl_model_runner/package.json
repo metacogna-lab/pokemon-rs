@@ -1,6 +1,0 @@
-{
-  "name": "@pokemon/rl_model_runner",
-  "version": "0.1.0",
-  "private": true,
-  "description": "RL model inference and execution"
-}

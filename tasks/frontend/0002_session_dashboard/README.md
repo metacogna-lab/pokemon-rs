@@ -6,12 +6,12 @@ Show session list, detail panels, state, metrics, and actions.
 
 ## Acceptance Criteria
 
-- [ ] Session list (mock list or create-then-view flow until GET /sessions exists)
-- [ ] Session detail panel: state, metrics (totalSpins, totalPayout)
-- [ ] Actions: PlaceBet, Spin, CashOut
-- [ ] Initiate session via createSession form (gameId, behaviorType)
-- [ ] Live state updates (polling or manual refresh)
-- [ ] Typed forms and tables using Session, SessionMetrics, GameplayAction from ts-client
+- [x] Session list (mock list or create-then-view flow until GET /sessions exists)
+- [x] Session detail panel: state, metrics (totalSpins, totalPayout)
+- [x] Actions: PlaceBet, Spin, CashOut
+- [x] Initiate session via createSession form (gameId, behaviorType)
+- [x] Live state updates (polling or manual refresh)
+- [x] Typed forms and tables using Session, SessionMetrics, GameplayAction from ts-client
 
 ## Dependencies
 

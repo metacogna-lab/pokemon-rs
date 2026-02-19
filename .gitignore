@@ -1,5 +1,15 @@
+# Secrets — never commit populated env files
 .env
+.env.production
+.env.local
+
+# Build artefacts
 node_modules/
 target/
 frontend/dist/
 frontend/tsconfig.tsbuildinfo
+
+# Docker volumes / local state
+postgres_data/
+cargo_registry/
+cargo_target/

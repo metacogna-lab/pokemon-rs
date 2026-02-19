@@ -16,7 +16,7 @@ describe("api client", () => {
     expect(result).toEqual({ status: "healthy" });
     expect(fetch).toHaveBeenCalledWith(
       "http://localhost:8080/v1/health",
-      undefined
+      expect.anything()
     );
   });
 });

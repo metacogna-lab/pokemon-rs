@@ -7,31 +7,28 @@ use std::time::{Duration, Instant};
 /// Fixed-window rate limiter: max_requests per window_duration per key.
 #[derive(Clone)]
 pub struct RateLimiter {
-    inner: Arc<RwLock<RateLimiterInner>>,
+    inner: Arc<RwLock<HashMap<String, (Instant, u32)>>>,
     max_requests: u32,
     window: Duration,
-}
-
-struct RateLimiterInner {
-    windows: HashMap<String, (Instant, u32)>,
 }
 
 impl RateLimiter {
     pub fn new(max_requests: u32, window: Duration) -> Self {
         Self {
-            inner: Arc::new(RwLock::new(RateLimiterInner {
-                windows: HashMap::new(),
-            })),
+            inner: Arc::new(RwLock::new(HashMap::new())),
             max_requests,
             window,
         }
     }
 
-    /// Returns true if the request is allowed, false if rate limit exceeded.
+    /// Returns true if the request is allowed; false if rate limit exceeded.
+    /// Returns true on lock error (fail-open is safer than fail-closed here).
     pub fn check(&self, key: &str) -> bool {
-        let mut g = self.inner.write().expect("lock");
+        let Ok(mut g) = self.inner.write() else {
+            return true; // fail-open: don't block requests on internal errors
+        };
         let now = Instant::now();
-        let entry = g.windows.entry(key.to_string()).or_insert((now, 0));
+        let entry = g.entry(key.to_string()).or_insert((now, 0));
         if now.duration_since(entry.0) >= self.window {
             *entry = (now, 1);
             return true;
@@ -45,12 +42,12 @@ impl RateLimiter {
 
     /// Seconds after which the client may retry (for Retry-After header).
     pub fn retry_after_seconds(&self, key: &str) -> u64 {
-        let g = self.inner.read().expect("lock");
-        if let Some((start, count)) = g.windows.get(key) {
+        let Ok(g) = self.inner.read() else { return 1 };
+        if let Some((start, count)) = g.get(key) {
             if *count >= self.max_requests {
                 let elapsed = start.elapsed();
                 if elapsed < self.window {
-                    return (self.window.as_secs()).saturating_sub(elapsed.as_secs()).max(1);
+                    return self.window.as_secs().saturating_sub(elapsed.as_secs()).max(1);
                 }
             }
         }
@@ -76,5 +73,13 @@ mod tests {
         assert!(r.check("a"));
         assert!(!r.check("a"));
         assert!(r.check("b"));
+    }
+
+    #[test]
+    fn retry_after_returns_positive() {
+        let r = RateLimiter::new(1, Duration::from_secs(60));
+        r.check("x");
+        r.check("x");
+        assert!(r.retry_after_seconds("x") >= 1);
     }
 }

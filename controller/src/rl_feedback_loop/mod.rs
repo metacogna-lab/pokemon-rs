@@ -9,5 +9,8 @@ mod store;
 
 pub use experience::Experience;
 pub use export::{export_experiences, ExportParams, ExportRecord, ExportResponse};
-pub use reward::{compute_reward, compute_reward_safe};
-pub use store::{ExperienceStore, InMemoryStore, StoreError};
+pub use reward::{
+    compute_reward, compute_reward_components, compute_reward_safe, sum_reward, RewardComponents,
+    LIKENESS_WEIGHT,
+};
+pub use store::{ExperienceStore, InMemoryStore, PostgresRlStore, StoreError};

@@ -1,0 +1,13 @@
+# ── Dev: Vite hot-reload server ───────────────────────────────────────────────
+# frontend/ is bind-mounted from the host; Vite watches source files.
+FROM oven/bun:1.2-alpine
+WORKDIR /app
+
+# Pre-install deps into the image layer (invalidated only when bun.lock changes).
+COPY frontend/package.json frontend/bun.lock* ./
+RUN bun install --frozen-lockfile
+
+# Source is bind-mounted at runtime — no COPY needed here.
+EXPOSE 5173
+# --host 0.0.0.0 makes Vite reachable from outside the container.
+CMD ["bun", "run", "dev", "--", "--host", "0.0.0.0"]

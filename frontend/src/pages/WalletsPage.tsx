@@ -25,7 +25,6 @@ export function WalletsPage() {
     setLoading(true);
     setError(null);
     const req: WalletOperationRequest = {
-      walletId: wid,
       operation,
       amount: { amount: amt, currency },
     };

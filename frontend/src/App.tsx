@@ -4,6 +4,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { SessionsPage } from "./pages/SessionsPage";
 import { WalletsPage } from "./pages/WalletsPage";
 import { FingerprintsPage } from "./pages/FingerprintsPage";
+import { RLPage } from "./pages/RLPage";
 
 /** Root app with routes. */
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/sessions" element={<SessionsPage />} />
         <Route path="/wallets" element={<WalletsPage />} />
         <Route path="/fingerprints" element={<FingerprintsPage />} />
+        <Route path="/rl" element={<RLPage />} />
       </Routes>
     </Layout>
   );

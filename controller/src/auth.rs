@@ -1,6 +1,7 @@
 //! Auth: Bearer token parsing and validation, role extraction.
 
 use anyhow::Result;
+use std::collections::HashSet;
 use thiserror::Error;
 
 /// Minimal role for RBAC.
@@ -26,11 +27,22 @@ pub fn parse_bearer_token(header_value: Option<&str>) -> Option<String> {
     }
 }
 
-/// Validate token and return role. For now: non-empty token with expected prefix maps to User;
-/// "admin:" prefix maps to Admin. In production, use JWT or a proper auth service.
-pub fn validate_token(token: &str, _secret: &[u8]) -> Result<Role> {
+/// Validate token against the configured API key set and return the caller's Role.
+///
+/// Rules:
+/// - Empty token → `AuthError::InvalidToken`
+/// - `api_keys` is empty → dev mode; any non-empty token accepted.
+///   - Token starts with `"admin:"` → `Role::Admin`
+///   - Otherwise → `Role::User`
+/// - `api_keys` is non-empty → token must be present in the set, else `AuthError::Unauthorized`.
+///   - Token starts with `"admin:"` → `Role::Admin`
+///   - Otherwise → `Role::User`
+pub fn validate_token(token: &str, api_keys: &HashSet<String>) -> Result<Role> {
     if token.is_empty() {
         return Err(AuthError::InvalidToken.into());
+    }
+    if !api_keys.is_empty() && !api_keys.contains(token) {
+        return Err(AuthError::Unauthorized.into());
     }
     if token.starts_with("admin:") {
         return Ok(Role::Admin);
@@ -80,14 +92,29 @@ mod tests {
     }
 
     #[test]
-    fn validate_token_returns_user_or_admin() {
-        assert_eq!(validate_token("any", &[]).unwrap(), Role::User);
-        assert_eq!(validate_token("admin:key", &[]).unwrap(), Role::Admin);
+    fn validate_token_returns_user_or_admin_in_dev_mode() {
+        let empty: HashSet<String> = HashSet::new();
+        assert_eq!(validate_token("any", &empty).unwrap(), Role::User);
+        assert_eq!(validate_token("admin:key", &empty).unwrap(), Role::Admin);
     }
 
     #[test]
-    fn validate_token_rejects_empty() {
-        assert!(validate_token("", &[]).is_err());
+    fn validate_token_rejects_empty_token() {
+        let empty: HashSet<String> = HashSet::new();
+        assert!(validate_token("", &empty).is_err());
+    }
+
+    #[test]
+    fn validate_token_enforces_api_keys_when_set() {
+        let keys: HashSet<String> = ["validkey".to_string()].into_iter().collect();
+        assert_eq!(validate_token("validkey", &keys).unwrap(), Role::User);
+        assert!(validate_token("wrongkey", &keys).is_err());
+    }
+
+    #[test]
+    fn validate_token_admin_prefix_in_key_set() {
+        let keys: HashSet<String> = ["admin:secret".to_string()].into_iter().collect();
+        assert_eq!(validate_token("admin:secret", &keys).unwrap(), Role::Admin);
     }
 
     #[test]

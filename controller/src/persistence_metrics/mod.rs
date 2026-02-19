@@ -1,8 +1,6 @@
 //! Persistence layer: in-memory implementations of SessionRepository and WalletRepository.
 
-use crate::api::{
-    Currency, GameId, Money, Session, SessionId, SessionMetrics, Wallet, WalletOperationType,
-};
+use crate::api::{Currency, Money, Session, SessionId, Wallet, WalletOperationType};
 use crate::app_state::{DomainError, SessionRepository, WalletRepository};
 use crate::state_engine::GameState;
 use async_trait::async_trait;

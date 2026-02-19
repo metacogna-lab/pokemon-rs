@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# Applies all database migrations in order. Uses psql; set PGHOST, PGPORT, PGUSER, PGDATABASE.
+# Applies all database migrations in order using bare psql.
+# WARNING: This script re-runs ALL migrations on every invocation and has no tracking table.
+#          It is intended for manual setup and CI bootstrapping only.
+# NOTE: The production server uses sqlx::migrate!() which tracks applied migrations in
+#       the _sqlx_migrations table and only applies pending ones. Prefer that for production.
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

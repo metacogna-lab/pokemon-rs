@@ -8,4 +8,4 @@
 
 ## Test Results
 
-- (To be filled after implementation)
+- `bun run test`: FingerprintsPage tests pass (mock game list, fingerprint detail on select, symbol chart). Mock data in `frontend/src/data/mockFingerprints.ts`; CSS-only bar chart in SymbolChart.

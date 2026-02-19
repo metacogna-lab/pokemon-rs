@@ -8,4 +8,5 @@
 
 ## Test Results
 
-- (To be filled after implementation)
+- `bun run test` (Vitest) passes: Layout, Nav, Loading, ErrorDisplay, ErrorBoundary, API client, SessionsPage, WalletsPage, FingerprintsPage (16 tests).
+- `bun run dev` starts dev server; routes /, /sessions, /wallets, /fingerprints render.

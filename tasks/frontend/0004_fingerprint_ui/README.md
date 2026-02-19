@@ -6,10 +6,10 @@ Explore and visualize game fingerprints, symbol maps, RTP profiles.
 
 ## Acceptance Criteria
 
-- [ ] List games (mock until GET /games exists)
-- [ ] Fingerprint detail view: RNG signature, symbol map, statistical profile
-- [ ] Chart for symbol distributions (bar chart)
-- [ ] Uses mock data shaped like backend 0005 fingerprint response until API exists
+- [x] List games (mock until GET /games exists)
+- [x] Fingerprint detail view: RNG signature, symbol map, statistical profile
+- [x] Chart for symbol distributions (bar chart)
+- [x] Uses mock data shaped like backend 0005 fingerprint response until API exists
 
 ## Dependencies
 

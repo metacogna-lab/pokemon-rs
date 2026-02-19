@@ -8,4 +8,4 @@
 
 ## Test Results
 
-- (To be filled after implementation)
+- `bun run test`: SessionsPage tests pass (empty state, create form submits with gameId and behaviorType). Manual: create session, view detail, execute PlaceBet/Spin/CashOut.

@@ -6,12 +6,12 @@ Establish a foundational UI skeleton (React + Vite) with basic navigation and AP
 
 ## Acceptance Criteria
 
-- [ ] React + Vite + TypeScript app (bun)
-- [ ] Routes: Dashboard, Sessions, Wallets, Fingerprints (placeholders for 0002–0004)
-- [ ] Shared components: Loading, ErrorBoundary, Layout, Nav
-- [ ] API integration layer wrapping ts-client with basePath from env
-- [ ] Base theme (CSS variables or Tailwind)
-- [ ] Component tests for shell, nav, loading, error
+- [x] React + Vite + TypeScript app (bun)
+- [x] Routes: Dashboard, Sessions, Wallets, Fingerprints (placeholders for 0002–0004)
+- [x] Shared components: Loading, ErrorBoundary, Layout, Nav
+- [x] API integration layer wrapping ts-client with basePath from env
+- [x] Base theme (CSS variables or Tailwind)
+- [x] Component tests for shell, nav, loading, error
 
 ## Dependencies
 

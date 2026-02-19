@@ -1,5 +1,5 @@
 /**
- * TypeScript API client generated from openapi.yaml.
+ * TypeScript API client aligned with openapi.yaml.
  * Regenerate with: bun run generate:client (from agents/).
  */
 
@@ -17,6 +17,7 @@ export interface Wallet {
   walletId: SessionId;
   balance: Money;
   dailyLimit: Money;
+  dailySpent: Money;
 }
 
 export interface ErrorResponse {
@@ -87,8 +88,9 @@ export interface GameplayResult {
 }
 
 export interface PlayActionRequest {
-  sessionId: SessionId;
   action: GameplayAction;
+  /** Measured human-likeness score (0.0–1.0). Optional; defaults to 0.5 on the server. */
+  humanLikeness?: number;
 }
 
 export interface PlayActionResponse {
@@ -103,8 +105,8 @@ export interface HealthResponse {
 
 export type WalletOperationType = "debit" | "credit";
 
+/** Wallet operation — walletId is in the URL path, not the request body. */
 export interface WalletOperationRequest {
-  walletId: SessionId;
   operation: WalletOperationType;
   amount: Money;
 }
@@ -113,10 +115,65 @@ export interface WalletOperationResponse {
   wallet: Wallet;
 }
 
+/** Request body for POST /wallets — create a new wallet. */
+export interface CreateWalletRequest {
+  /** Client-supplied wallet ID; server generates one if absent. */
+  walletId?: SessionId;
+  balance: Money;
+  dailyLimit: Money;
+}
+
+/** Single event record from GET /sessions/{id}/events. */
+export interface SessionEventRecord {
+  eventId: string;
+  sessionId: string;
+  action: unknown;
+  result: unknown;
+  timestamp?: string;
+  reward?: number;
+}
+
+/** Response for GET /sessions/{id}/events. */
+export interface SessionEventsResponse {
+  events: SessionEventRecord[];
+}
+
+/** Game fingerprint from GET /games/{gameId}/fingerprint. */
+export interface GameFingerprintResponse {
+  gameId: string;
+  rngSignature: string;
+  symbolMap: Record<string, number>;
+  statisticalProfile: Record<string, number>;
+}
+
+/** Single RL experience record from GET /rl/export. */
+export interface RlExperience {
+  id: string;
+  sessionId: string;
+  state: unknown;
+  action: unknown;
+  reward: number;
+  nextState: unknown;
+  done: boolean;
+  createdAt?: string;
+}
+
+/** Response for GET /rl/export. */
+export interface RlExportResponse {
+  experiences: RlExperience[];
+}
+
 export class Configuration {
-  basePath: string;
-  constructor(params: { basePath?: string } = {}) {
+  readonly basePath: string;
+  readonly apiKey?: string;
+  readonly timeoutMs: number;
+
+  constructor(
+    params: { basePath?: string; apiKey?: string; timeoutMs?: number } = {}
+  ) {
     this.basePath = params.basePath ?? "http://localhost:8080/v1";
+    this.apiKey = params.apiKey;
+    this.timeoutMs = params.timeoutMs ?? 10_000;
   }
 }
 
@@ -126,117 +183,146 @@ function buildUrl(config: Configuration, path: string): string {
   return `${base}${p}`;
 }
 
+/** Merges Authorization header and AbortController timeout into fetch options. */
+function withAuth(
+  config: Configuration,
+  options?: RequestInit
+): RequestInit & { signal: AbortSignal } {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), config.timeoutMs);
+  // Prevent timer from keeping process alive in Bun/Node.
+  if (typeof timer === "object" && "unref" in timer) {
+    (timer as ReturnType<typeof setTimeout> & { unref(): void }).unref();
+  }
+  const headers: Record<string, string> = {
+    ...(options?.headers as Record<string, string>),
+  };
+  if (config.apiKey) {
+    headers["Authorization"] = `Bearer ${config.apiKey}`;
+  }
+  return { ...options, headers, signal: controller.signal };
+}
+
+async function handleResponse<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    let code = "INTERNAL_ERROR";
+    let message = res.statusText;
+    try {
+      const err = (await res.json()) as ErrorResponse;
+      code = err.error?.code ?? code;
+      message = err.error?.message ?? message;
+    } catch {
+      // ignore parse error
+    }
+    throw new ApiError(message, code, res.status);
+  }
+  return res.json() as Promise<T>;
+}
+
 /** API client for session, gameplay, wallet, and health endpoints. */
 export class DefaultApi {
-  constructor(private config: Configuration) {}
+  constructor(private readonly config: Configuration) {}
 
-  async getHealth(options?: RequestInit): Promise<HealthResponse> {
-    const res = await fetch(buildUrl(this.config, "/health"), options);
-    if (!res.ok) {
-      const err: ErrorResponse = await res.json().catch(() => ({
-        error: { code: "INTERNAL_ERROR", message: res.statusText },
-      }));
-      throw new ApiError(
-        err.error?.message ?? res.statusText,
-        err.error?.code ?? "INTERNAL_ERROR",
-        res.status
-      );
-    }
-    return res.json();
+  async getHealth(): Promise<HealthResponse> {
+    // Health is a public endpoint — no auth header needed.
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), this.config.timeoutMs);
+    const res = await fetch(buildUrl(this.config, "/health"), {
+      signal: controller.signal,
+    });
+    return handleResponse<HealthResponse>(res);
   }
 
-  async createSession(
-    createSessionRequest: CreateSessionRequest,
-    options?: RequestInit
-  ): Promise<CreateSessionResponse> {
+  async createSession(req: CreateSessionRequest): Promise<CreateSessionResponse> {
     const res = await fetch(buildUrl(this.config, "/sessions"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(createSessionRequest),
-      ...options,
+      body: JSON.stringify(req),
+      ...withAuth(this.config),
     });
-    if (!res.ok) {
-      const err: ErrorResponse = await res.json().catch(() => ({
-        error: { code: "INTERNAL_ERROR", message: res.statusText },
-      }));
-      throw new ApiError(
-        err.error?.message ?? res.statusText,
-        err.error?.code ?? "INTERNAL_ERROR",
-        res.status
-      );
-    }
-    return res.json();
+    return handleResponse<CreateSessionResponse>(res);
   }
 
-  async getSession(sessionId: SessionId, options?: RequestInit): Promise<Session> {
+  async getSession(sessionId: SessionId): Promise<Session> {
     const res = await fetch(
       buildUrl(this.config, `/sessions/${encodeURIComponent(sessionId)}`),
-      options
+      withAuth(this.config)
     );
-    if (!res.ok) {
-      const err: ErrorResponse = await res.json().catch(() => ({
-        error: { code: "INTERNAL_ERROR", message: res.statusText },
-      }));
-      throw new ApiError(
-        err.error?.message ?? res.statusText,
-        err.error?.code ?? "INTERNAL_ERROR",
-        res.status
-      );
-    }
-    return res.json();
+    return handleResponse<Session>(res);
   }
 
   async playAction(
     sessionId: SessionId,
-    playActionRequest: PlayActionRequest,
-    options?: RequestInit
+    req: PlayActionRequest
   ): Promise<PlayActionResponse> {
     const res = await fetch(
       buildUrl(this.config, `/sessions/${encodeURIComponent(sessionId)}/action`),
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(playActionRequest),
-        ...options,
+        body: JSON.stringify(req),
+        ...withAuth(this.config),
       }
     );
-    if (!res.ok) {
-      const err: ErrorResponse = await res.json().catch(() => ({
-        error: { code: "INTERNAL_ERROR", message: res.statusText },
-      }));
-      throw new ApiError(
-        err.error?.message ?? res.statusText,
-        err.error?.code ?? "INTERNAL_ERROR",
-        res.status
-      );
-    }
-    return res.json();
+    return handleResponse<PlayActionResponse>(res);
   }
 
   async walletOperation(
     walletId: SessionId,
-    request: WalletOperationRequest,
-    options?: RequestInit
+    req: WalletOperationRequest
   ): Promise<WalletOperationResponse> {
     const res = await fetch(
       buildUrl(this.config, `/wallets/${encodeURIComponent(walletId)}/operations`),
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(request),
-        ...options,
+        body: JSON.stringify(req),
+        ...withAuth(this.config),
       }
     );
-    if (!res.ok) {
-      const err: ErrorResponse = await res.json().catch(() => ({
-        error: { code: "INTERNAL_ERROR", message: res.statusText },
-      }));
-      throw new ApiError(
-        err.error?.message ?? res.statusText,
-        err.error?.code ?? "INTERNAL_ERROR",
-        res.status
-      );
-    }
-    return res.json();
+    return handleResponse<WalletOperationResponse>(res);
+  }
+
+  async createWallet(req: CreateWalletRequest): Promise<Wallet> {
+    const res = await fetch(buildUrl(this.config, "/wallets"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+      ...withAuth(this.config),
+    });
+    return handleResponse<Wallet>(res);
+  }
+
+  async getSessionEvents(sessionId: SessionId): Promise<SessionEventsResponse> {
+    const res = await fetch(
+      buildUrl(this.config, `/sessions/${encodeURIComponent(sessionId)}/events`),
+      withAuth(this.config)
+    );
+    return handleResponse<SessionEventsResponse>(res);
+  }
+
+  async getGameFingerprint(gameId: string): Promise<GameFingerprintResponse> {
+    const res = await fetch(
+      buildUrl(this.config, `/games/${encodeURIComponent(gameId)}/fingerprint`),
+      withAuth(this.config)
+    );
+    return handleResponse<GameFingerprintResponse>(res);
+  }
+
+  async getRlExport(
+    sessionId: SessionId,
+    limit?: number,
+    offset?: number
+  ): Promise<RlExportResponse> {
+    const params = new URLSearchParams({
+      sessionId,
+      limit: String(limit ?? 100),
+      offset: String(offset ?? 0),
+    });
+    const res = await fetch(
+      buildUrl(this.config, `/rl/export?${params.toString()}`),
+      withAuth(this.config)
+    );
+    return handleResponse<RlExportResponse>(res);
   }
 }
